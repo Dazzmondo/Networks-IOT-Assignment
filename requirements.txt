@@ -1,0 +1,49 @@
+# Installation order:
+#
+#   Step 1 — system packages via apt (on Raspberry Pi OS):
+#     sudo apt install -y python3-picamera2 sense-hat python3-paho-mqtt
+#     sudo apt install -y mosquitto-clients libgl1 libglib2.0-0 libatlas-base-dev
+#
+#   Step 2 — create venv:
+#     python -m venv .venv --system-site-packages
+#     source .venv/bin/activate
+#
+#   Step 3 — install this file:
+#     pip install -r requirements.txt
+#
+#   Step 4 — BlynkLib (separate install):
+#     pip install https://bit.ly/3C0PMVY
+#
+#   Step 5 — clear cache:
+#     pip cache purge
+#
+# Notes:
+#   - ultralytics not listed — requires torch (~426MB), too large for Pi.
+#     detector_service.py uses onnxruntime directly.
+#     Export yolov8n.onnx on a laptop and copy to models/.
+#
+#   - paho-mqtt, picamera2, sense-hat NOT listed — installed via apt.
+#     Accessible in venv via --system-site-packages.
+#
+#   - BlynkLib NOT listed — install separately (Step 4 above).
+# =============================================================================
+
+# ── AI / Computer Vision (ONNX — no PyTorch) ─────────────────────────────────
+onnxruntime
+opencv-python-headless
+pillow
+pyyaml
+tqdm
+psutil
+numpy
+
+# ── Image hosting ─────────────────────────────────────────────────────────────
+cloudinary
+
+# ── Web dashboard ─────────────────────────────────────────────────────────────
+flask
+flask-cors
+gunicorn
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+python-dotenv

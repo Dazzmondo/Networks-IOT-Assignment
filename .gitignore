@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+logs/
+images/
+detections.db
+models/yolov8n.onnx
+models/yolov8n.pt

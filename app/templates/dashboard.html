@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IoT Detection Dashboard</title>
+  <meta http-equiv="refresh" content="10">
+  <link href="https://mattduck.github.io/generic-css/css/generic-light.min.css"
+        rel="stylesheet" type="text/css"/>
+  <style>
+    body       { font-family: sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    .counts    { display: flex; gap: 2rem; margin: 1rem 0 2rem; }
+    .count-box { border: 2px solid #ccc; border-radius: 8px; padding: 1rem 2rem; text-align: center; min-width: 140px; }
+    .count-box h2 { margin: 0; font-size: 2.5rem; }
+    .count-box p  { margin: 0; color: #555; }
+    table      { width: 100%; border-collapse: collapse; }
+    th, td     { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd; }
+    th         { background: #f0f0f0; }
+    .dog       { color: #c0392b; font-weight: bold; }
+    .person    { color: #2980b9; font-weight: bold; }
+    img.thumb  { max-height: 70px; border-radius: 4px; }
+    .meta      { color: #777; font-size: 0.85rem; margin-bottom: 2rem; }
+    .env-box   { background: #f8f8f8; border: 1px solid #ddd; border-radius: 6px;
+                 padding: 0.75rem 1.25rem; margin-bottom: 2rem; display: inline-block; }
+    .env-box span { margin-right: 1.5rem; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+  <h1>IoT Pet &amp; Human Detection Dashboard</h1>
+  <p class="meta">
+    Motion-gated detection: OpenCV → YOLOv8 ONNX → Blynk + MQTT + Cloudinary.
+    Auto-refreshes every 10 seconds.
+  </p>
+
+  <!-- Live Environmental Data -->
+  <div class="env-box">
+    <strong>SenseHAT:</strong>
+    <span>🌡 {{ env.temp }}°C</span>
+    <span>💧 {{ env.humidity }}%</span>
+    <span>📊 {{ env.pressure }} hPa</span>
+  </div>
+
+  <!-- Detection Counts -->
+  <div class="counts">
+    <div class="count-box">
+      <h2 class="dog">{{ dog_count }}</h2>
+      <p>Dogs Detected</p>
+    </div>
+    <div class="count-box">
+      <h2 class="person">{{ human_count }}</h2>
+      <p>Humans Detected</p>
+    </div>
+  </div>
+
+  <!-- API Reference -->
+  <h2>API Endpoints</h2>
+  <table>
+    <thead>
+      <tr><th>Path</th><th>Method</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>/api/detections</td><td>GET</td><td>Recent detections (JSON)</td></tr>
+      <tr><td>/api/counts</td><td>GET</td><td>Total counts per label (JSON)</td></tr>
+      <tr><td>/api/environment</td><td>GET</td><td>Latest SenseHAT reading (JSON)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Recent Detections -->
+  <h2>Recent Detections</h2>
+  {% if detections %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Timestamp</th>
+        <th>Label</th>
+        <th>Confidence</th>
+        <th>Temp (°C)</th>
+        <th>Humidity (%)</th>
+        <th>Blynk</th>
+        <th>MQTT</th>
+        <th>Image</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detections %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td>{{ d.timestamp }}</td>
+        <td class="{{ d.label }}">{{ d.label | capitalize }}</td>
+        <td>{{ "%.0f"|format(d.confidence * 100) }}%</td>
+        <td>{{ d.temp if d.temp is not none else "—" }}</td>
+        <td>{{ d.humidity if d.humidity is not none else "—" }}</td>
+        <td>{{ "✓" if d.blynk_notified else "—" }}</td>
+        <td>{{ "✓" if d.mqtt_published else "—" }}</td>
+        <td>
+          {% if d.image_url %}
+            <a href="{{ d.image_url }}" target="_blank">
+              <img class="thumb" src="{{ d.image_url }}" alt="{{ d.label }}">
+            </a>
+          {% elif d.image_path %}
+            <span style="color:#aaa">local only</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No detections recorded yet. Start main.py and trigger the motion sensor.</p>
+  {% endif %}
+
+</body>
+</html>
