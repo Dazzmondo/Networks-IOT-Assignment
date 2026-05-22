@@ -119,6 +119,50 @@ MongoDB Atlas (Cloud Mirror)
 
 ---
 
+## Knowledge Leveraged from Other Modules
+
+### Programming
+- Separation of Concerns / Modular Design
+- Object-Oriented Programming (Classes, Methods, Encapsulation)
+- Exception Handling (`try` / `except`)
+- Conditional Logic and Loops
+- Functions and Static Methods
+- Dictionaries, Lists, Tuples, and Arrays
+- File Handling and JSON Processing
+- Logging and Debugging
+- External Library Integration
+
+### Web Development
+- HTML5
+- CSS3
+- Responsive Layout Design
+- CSS Grid and Flexbox
+- JavaScript
+- Flask Templating (Jinja2)
+- JSON Data Handling
+
+### Databases
+- SQL
+- CRUD Operations
+- Database Queries and Filtering
+- NoSQL Data Modelling
+- MongoDB
+- MongoDB Aggregation Pipelines (`$group`, `$avg`, `$sum`, `$dateTrunc`)
+- JSON Document Storage
+
+### Computer Systems and Networks
+- MQTT Messaging (HiveMQ + `paho-mqtt`)
+- Publish/Subscribe Architecture
+- Last Will and Testament (LWT)
+- Blynk IoT Integration
+- Sensor Telemetry Collection
+- Raspberry Pi / SenseHAT Integration
+- Edge Computing Concepts
+- Cloud Deployment (Render)
+- Cloudinary Media Hosting
+
+---
+
 ## Demo
 
 
@@ -828,14 +872,26 @@ docker compose up
 
 #### Computer Vision & Object Detection
 * [Ultralytics COCO Dataset Guide](https://docs.ultralytics.com/datasets/detect/coco)
+* [Ultralytics Dataset Configuration (YAML)](https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml)
+* [Ultralytics Model Export Formats](https://docs.ultralytics.com/modes/export#export-formats)
 * [Ultralytics ONNX Integration](https://docs.ultralytics.com/integrations/onnx)
 * [OpenCV Main Documentation (v3.4)](https://docs.opencv.org/3.4/pages.html)
 * [OpenCV Python Tutorials](https://docs.opencv.org/3.4/d6/d00/tutorial_py_root.html)
+* [OpenCV Deep Neural Network (DNN) readNet](https://docs.opencv.org/4.x/d6/d0f/group__dnn.html#ga9d118d70a1659af729d01b10233213ee)
 * [Motion Detection using OpenCV on Raspberry Pi 4](https://automaticaddison.com/motion-detection-using-opencv-on-raspberry-pi-4/)
+* [Raspberry Pi Picamera2 Official Manual](https://pip-assets.raspberrypi.com/categories/652-raspberry-pi-camera-module-2/documents/RP-008156-DS-2-picamera2-manual.pdf?disposition=inline)
 
 #### ONNX Runtime
 * [ONNX Runtime Execution Providers](https://onnxruntime.ai/docs/execution-providers/)
 * [ONNX Runtime Python API Summary](https://onnxruntime.ai/docs/api/python/api_summary.html)
+
+#### Databases & Cloud Integration
+* [SQLite3 Python Library Documentation](https://docs.python.org/3/library/sqlite3.html)
+* [SQLite Write-Ahead Logging (WAL) Mode](https://sqlite.org/wal.html)
+* [PyMongo MongoClient Reference](https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient)
+
+#### Networking & Messaging
+* [Eclipse Paho MQTT Python Client Documentation](https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html)
 
 #### Containerization
 * [Docker Dockerfile Reference](https://docs.docker.com/reference/dockerfile/)
@@ -850,24 +906,37 @@ docker compose up
 * [Chart.js Library CDN (v4.4.1)](https://cdnjs.com/libraries/Chart.js/4.4.1)
 * [Chart.js date-fns Adapter (NPM)](https://www.npmjs.com/package/chartjs-adapter-date-fns)
 
-#### Web APIs & Backend Streaming
+#### Web APIs, Security & Backend Streaming
 * [MDN Web Docs: Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
+* [MDN Web Docs: Using Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)
 * [MDN Web Docs: EventSource API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
 * [MDN Web Docs: Document Object Model (DOM)](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+* [MDN Web Docs: getElementById Method](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById)
+* [MDN Web Docs: createElement Method](https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement)
 * [MDN Web Docs: insertAdjacentHTML Method](https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML)
+* [MDN Web Docs: outerHTML Property](https://developer.mozilla.org/en-US/docs/Web/API/Element/outerHTML)
+* [MDN Web Docs: textContent Property vs innerHTML](https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent#differences_from_innerhtml)
+* [MDN Web Docs: rel="noopener" Attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/noopener)
+* [MDN Web Docs: beforeunload Window Event](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
 * [WHATWG Living Standard: Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html)
 * [Flask Documentation: Streaming Patterns](https://flask.palletsprojects.com/en/stable/patterns/streaming/)
+* [Flask-CORS Extension Documentation](https://flask-cors.readthedocs.io/en/latest/)
+* [Gunicorn Architecture: Thread Configuration Guide](https://gunicorn.org/design/#how-many-threads)
+* [OWASP Foundation: Cross-Site Scripting (XSS) Mitigation](https://owasp.org/www-community/attacks/xss/)
 
-#### Python Core
+#### Python Core & Analytics
 * [W3Schools: Python Lambda Keyword](https://www.w3schools.com/python/ref_keyword_lambda.asp)
+* [MDN Web Docs: JavaScript Nullish Coalescing Operator (??)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing)
+* [Python Standard Library: queue.Queue](https://docs.python.org/3/library/queue.html#queue.Queue)
+* [Python Standard Library: collections.defaultdict](https://docs.python.org/3/library/collections.html#collections.defaultdict)
+* [Python Standard Library: statistics.stdev](https://docs.python.org/3/library/statistics.html#statistics.stdev)
+* [Statistics How To: Z-Score Definition and Calculations](https://www.statisticshowto.com/probability-and-statistics/z-score/)
 
 ### Video Tutorials
 * [YouTube: OpenCV Tutorial](https://www.youtube.com/watch?v=P4Z8_qe2Cu0)
 * [YouTube: Docker Overview](https://www.youtube.com/watch?v=kTp5xUtcalw)
 * [YouTube: Docker Full Stack Implementation](https://www.youtube.com/watch?v=lEcULR30-GM)
 
-
-https://sqlite.org/wal.html
 
 ---
 
