@@ -27,14 +27,14 @@ if not logger.handlers:
     # File handler — persistent log
     _file_handler = logging.FileHandler("logs/events.log")
     _file_handler.setFormatter(_formatter)
- 
+
     # Stream handler — stdout / Docker logs
     _stream_handler = logging.StreamHandler()
     _stream_handler.setFormatter(_formatter)
- 
+
     logger.addHandler(_file_handler)
     logger.addHandler(_stream_handler)
- 
+
 # Prevent log records from propagating to the root logger
 # (avoids duplicate output if another library configures the root).
 logger.propagate = False

@@ -5,15 +5,15 @@
   <title>IoT Detection Dashboard</title>
 
   <!--
-    Chart.js library
+    Chart.js library.
     Used to create live graphs for detections and temperature.
   -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
   <!--
-    Required for time-based x-axis formatting in Chart.js
-    Chart.js doesn't understand JSON timestamps natively, 
-    so this adapter converts them to Date objects.
+    Required for time-based x-axis formatting in Chart.js.
+    Chart.js does not understand ISO timestamp strings natively —
+    this adapter converts them to Date objects automatically.
   -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
@@ -66,13 +66,8 @@
       font-size: 2rem;
     }
 
-    .dog {
-      color: #c0392b;
-    }
-
-    .person {
-      color: #2980b9;
-    }
+    .dog    { color: #c0392b; }
+    .person { color: #2980b9; }
 
     /* ─────────────────────────────────────────────
        ENVIRONMENT BOX
@@ -140,9 +135,14 @@
       padding: 1rem;
     }
 
-    canvas {
-      width: 100%;
-      height: 300px;
+    /*
+      height on a plain <canvas> is ignored by Chart.js unless
+      maintainAspectRatio: false is also set in the chart options.
+      The height is controlled via a wrapper div instead.
+    */
+    .chart-box .chart-wrap {
+      position: relative;
+      height: 250px;
     }
 
     /* ─────────────────────────────────────────────
@@ -193,6 +193,9 @@
 
   <!-- ─────────────────────────────────────────────
        LIVE ENVIRONMENT DATA
+
+       Values populated on page load by Jinja, then
+       updated live by the SSE "environment" event.
   ───────────────────────────────────────────── -->
 
   <div class="env-box">
@@ -203,6 +206,9 @@
 
   <!-- ─────────────────────────────────────────────
        DETECTION COUNTS
+
+       Values populated on page load by Jinja, then
+       updated live by the SSE "counts" event.
   ───────────────────────────────────────────── -->
 
   <div class="counts">
@@ -221,6 +227,13 @@
 
   <!-- ─────────────────────────────────────────────
        ANALYTICS
+
+       Values populated on page load by Jinja, then
+       updated live by the SSE "analytics" event.
+
+       Rolling average: mean detections/hour over 24 h.
+       Anomaly score:   Z-score vs the 24 h baseline.
+                        Normal < 1.5, Elevated < 2.5, High >= 2.5
   ───────────────────────────────────────────── -->
 
   <h2>Analytics</h2>
@@ -228,37 +241,34 @@
   <div class="analytics">
 
     <div class="metric-box">
-      <p class="metric-label">Rolling Average</p>
-      <p class="metric-value" id="rolling-avg">
-        {{ analytics.rolling_avg }}
-      </p>
+      <p class="metric-label">Rolling Avg (per hour)</p>
+      <p class="metric-value" id="rolling-avg">{{ analytics.rolling_avg }}</p>
     </div>
 
     <div class="metric-box">
       <p class="metric-label">Current Hour</p>
-      <p class="metric-value" id="current-hour">
-        {{ analytics.current_hour }}
-      </p>
+      <p class="metric-value" id="current-hour">{{ analytics.current_hour }}</p>
     </div>
 
     <div class="metric-box">
-      <p class="metric-label">Peak Hour</p>
-      <p class="metric-value" id="peak-hour">
-        {{ analytics.peak_hour }}
-      </p>
+      <p class="metric-label">Peak Hour (24 h)</p>
+      <p class="metric-value" id="peak-hour">{{ analytics.peak_hour }}</p>
     </div>
 
     <div class="metric-box">
-      <p class="metric-label">Anomaly Score</p>
-      <p class="metric-value" id="anomaly-score">
-        {{ analytics.anomaly_score }}
-      </p>
+      <p class="metric-label">Anomaly Score (Z-score)</p>
+      <p class="metric-value" id="anomaly-score">{{ analytics.anomaly_score }}</p>
     </div>
 
   </div>
 
   <!-- ─────────────────────────────────────────────
        CHARTS
+
+       All three charts are initialised on page load
+       using data injected by Jinja (bootstrap).
+       The SSE "timeseries" event then replaces the
+       chart data whenever new detections arrive.
   ───────────────────────────────────────────── -->
 
   <h2>Charts</h2>
@@ -267,17 +277,23 @@
 
     <div class="chart-box">
       <h3>Detections Over Time</h3>
-      <canvas id="timeChart"></canvas>
+      <div class="chart-wrap">
+        <canvas id="timeChart"></canvas>
+      </div>
     </div>
 
     <div class="chart-box">
       <h3>Detection Totals</h3>
-      <canvas id="barChart"></canvas>
+      <div class="chart-wrap">
+        <canvas id="barChart"></canvas>
+      </div>
     </div>
 
     <div class="chart-box">
       <h3>Temperature Trend</h3>
-      <canvas id="tempChart"></canvas>
+      <div class="chart-wrap">
+        <canvas id="tempChart"></canvas>
+      </div>
     </div>
 
   </div>
@@ -296,36 +312,21 @@
         <th>Description</th>
       </tr>
     </thead>
-
     <tbody>
-      <tr>
-        <td>/api/detections</td>
-        <td>GET</td>
-        <td>Recent detections</td>
-      </tr>
-
-      <tr>
-        <td>/api/counts</td>
-        <td>GET</td>
-        <td>Total counts</td>
-      </tr>
-
-      <tr>
-        <td>/api/environment</td>
-        <td>GET</td>
-        <td>Latest SenseHAT data</td>
-      </tr>
-
-      <tr>
-        <td>/stream</td>
-        <td>GET</td>
-        <td>Live SSE updates</td>
-      </tr>
+      <tr><td>/api/detections</td> <td>GET</td>       <td>Recent detections</td></tr>
+      <tr><td>/api/counts</td>     <td>GET</td>       <td>Total counts</td></tr>
+      <tr><td>/api/environment</td><td>GET</td>       <td>Latest SenseHAT data</td></tr>
+      <tr><td>/api/analytics</td>  <td>GET</td>       <td>Rolling average and anomaly score</td></tr>
+      <tr><td>/stream</td>         <td>GET (SSE)</td> <td>Live push updates</td></tr>
     </tbody>
   </table>
 
   <!-- ─────────────────────────────────────────────
        DETECTIONS TABLE
+
+       Rows populated on page load by Jinja.
+       New rows prepended live by the SSE "detection"
+       event without reloading the page.
   ───────────────────────────────────────────── -->
 
   <h2>Recent Detections</h2>
@@ -352,7 +353,7 @@
 
       {% for d in detections %}
 
-      <tr>
+      <tr id="row-{{ d.id }}">
         <td>{{ d.id }}</td>
         <td>{{ d.timestamp }}</td>
 
@@ -360,45 +361,33 @@
           {{ d.label | capitalize }}
         </td>
 
-        <td>
-          {{ "%.0f"|format(d.confidence * 100) }}%
-        </td>
+        <td>{{ "%.0f"|format(d.confidence * 100) }}%</td>
+
+        <td>{{ d.temp if d.temp is not none else "—" }}</td>
+
+        <td>{{ d.humidity if d.humidity is not none else "—" }}</td>
+
+        <td>{{ "✓" if d.blynk_notified else "—" }}</td>
+
+        <td>{{ "✓" if d.mqtt_published else "—" }}</td>
 
         <td>
-          {{ d.temp if d.temp is not none else "—" }}
-        </td>
-
-        <td>
-          {{ d.humidity if d.humidity is not none else "—" }}
-        </td>
-
-        <td>
-          {{ "✓" if d.blynk_notified else "—" }}
-        </td>
-
-        <td>
-          {{ "✓" if d.mqtt_published else "—" }}
-        </td>
-
-        <td>
-
           {% if d.image_url %}
-
-          <a href="{{ d.image_url }}"
-             target="_blank"
-             rel="noopener noreferrer">
-
-            <img class="thumb"
-                 src="{{ d.image_url }}"
-                 alt="{{ d.label }}"
-                 loading="lazy">
-
-          </a>
-
+            <!--
+              rel="noopener noreferrer" prevents the opened tab accessing
+              window.opener (reverse tabnabbing protection).
+            -->
+            <a href="{{ d.image_url }}"
+               target="_blank"
+               rel="noopener noreferrer">
+              <img class="thumb"
+                   src="{{ d.image_url }}"
+                   alt="{{ d.label }}"
+                   loading="lazy">
+            </a>
           {% else %}
             —
           {% endif %}
-
         </td>
 
       </tr>
@@ -418,6 +407,7 @@
 
   {% endif %}
 
+
   <!-- ─────────────────────────────────────────────
        JAVASCRIPT
   ───────────────────────────────────────────── -->
@@ -425,17 +415,33 @@
   <script>
 
     /*
-      Bootstrap data from Flask/Jinja.
+      Bootstrap data injected by Flask/Jinja on page load.
 
-      Flask converts Python dictionaries into JSON.
-      This allows Chart.js to render immediately
-      when the page loads.
+      chart_data is a Python dict passed from dashboard.py,
+      serialised to JSON by Jinja's tojson filter.
+
+      Shape:
+        {
+          timeseries: { dog: [...], person: [...], temp: [...] },
+          hourly:     { labels: [...], counts: [...], ... },
+          counts:     { dog: int, person: int }
+        }
+
+      The null-safe fallback (bootstrap.timeseries || {})
+      prevents a TypeError if the backend returns an empty
+      or unexpected shape on first load.
     */
 
     const bootstrap = {{ chart_data | tojson }};
 
+    const ts     = bootstrap.timeseries || {};
+    const counts = bootstrap.counts     || {};
+
     /* ─────────────────────────────────────────────
        CHART 1 — DETECTIONS OVER TIME
+
+       Line chart. X-axis is time (ISO strings).
+       One line for dogs, one for humans.
     ───────────────────────────────────────────── */
 
     const timeChart = new Chart(
@@ -445,33 +451,36 @@
 
         data: {
           datasets: [
-
             {
-              label: 'Dogs',
-              data: bootstrap.timeseries.dog || [],
-              borderColor: '#c0392b'
+              label:       'Dogs',
+              data:        ts.dog    || [],
+              borderColor: '#c0392b',
+              fill:        false
             },
-
             {
-              label: 'Humans',
-              data: bootstrap.timeseries.person || [],
-              borderColor: '#2980b9'
+              label:       'Humans',
+              data:        ts.person || [],
+              borderColor: '#2980b9',
+              fill:        false
             }
-
           ]
         },
 
         options: {
-          responsive: true,
+          responsive:          true,
+          /*
+            maintainAspectRatio: false tells Chart.js to use the
+            height of the parent .chart-wrap div (250px) instead
+            of calculating its own height from the canvas element.
+            Without this, the canvas height set in CSS is ignored.
+          */
+          maintainAspectRatio: false,
 
           scales: {
             x: {
               type: 'time',
-              time: {
-                unit: 'hour'
-              }
+              time: { unit: 'hour' }
             },
-
             y: {
               beginAtZero: true
             }
@@ -481,7 +490,7 @@
     );
 
     /* ─────────────────────────────────────────────
-       CHART 2 — BAR CHART
+       CHART 2 — BAR CHART (TOTALS)
     ───────────────────────────────────────────── */
 
     const barChart = new Chart(
@@ -494,25 +503,22 @@
 
           datasets: [{
             data: [
-              bootstrap.counts.dog || 0,
-              bootstrap.counts.person || 0
+              counts.dog    || 0,
+              counts.person || 0
             ],
-
-            backgroundColor: [
-              '#c0392b',
-              '#2980b9'
-            ]
+            backgroundColor: ['#c0392b', '#2980b9']
           }]
         },
 
         options: {
-          responsive: true
+          responsive:          true,
+          maintainAspectRatio: false
         }
       }
     );
 
     /* ─────────────────────────────────────────────
-       CHART 3 — TEMPERATURE
+       CHART 3 — TEMPERATURE TREND
     ───────────────────────────────────────────── */
 
     const tempChart = new Chart(
@@ -522,209 +528,215 @@
 
         data: {
           datasets: [{
-            label: 'Temperature',
-            data: bootstrap.timeseries.temp || [],
-            borderColor: '#e67e22'
+            label:       'Temperature °C',
+            data:        ts.temp || [],
+            borderColor: '#e67e22',
+            fill:        false
           }]
         },
 
         options: {
-          responsive: true,
+          responsive:          true,
+          maintainAspectRatio: false,
 
           scales: {
             x: {
               type: 'time',
-              time: {
-                unit: 'hour'
-              }
+              time: { unit: 'hour' }
             }
           }
         }
       }
     );
 
+
     /* ─────────────────────────────────────────────
        SERVER-SENT EVENTS (SSE)
 
-       Flask keeps a connection open to the browser.
-
-       Whenever new data arrives, the server pushes
-       an event to the page instantly.
-
-       This avoids refreshing the entire page.
+       Flask keeps a connection open to the browser
+       via /stream.  Whenever the backend has new data
+       it pushes a named event here.  The correct
+       listener fires and updates only the relevant
+       part of the page — no full reload needed.
     ───────────────────────────────────────────── */
 
     const evtSource = new EventSource('/stream');
 
+
     /* ─────────────────────────────────────────────
        DETECTION EVENT
+
+       A new detection was logged to the database.
+       Prepend a new row to the detections table.
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('detection', (e) => {
 
-      const d = JSON.parse(e.data);
-
-      const tbody =
-        document.getElementById('detections-tbody');
+      const d     = JSON.parse(e.data);
+      const tbody = document.getElementById('detections-tbody');
 
       if (!tbody) return;
 
       /*
-        Add a new detection row to the top
-        of the table.
+        Skip if this row already exists in the table.
+        Prevents duplicates if the SSE stream reconnects
+        and replays recent events.
       */
+      if (document.getElementById('row-' + d.id)) return;
+
+      /*
+        Build the image cell safely.
+        d.image_url is only used as an attribute value,
+        not injected as HTML, so it cannot run scripts.
+      */
+      let imgCell = '—';
+      if (d.image_url) {
+        const a       = document.createElement('a');
+        a.href        = d.image_url;
+        a.target      = '_blank';
+        a.rel         = 'noopener noreferrer';
+        const img     = document.createElement('img');
+        img.src       = d.image_url;
+        img.alt       = d.label;
+        img.className = 'thumb';
+        img.loading   = 'lazy';
+        a.appendChild(img);
+
+        /*
+          Serialise the anchor element to a string so it
+          can be included in the template literal below.
+        */
+        imgCell = a.outerHTML;
+      }
+
+      /*
+        The only values inserted as HTML here are:
+          - d.id        (integer from database)
+          - d.timestamp (ISO date string)
+          - d.label     (always "dog" or "person")
+          - d.confidence (float)
+          - d.temp, d.humidity (floats or null)
+          - d.blynk_notified, d.mqtt_published (booleans)
+          - imgCell (built with DOM methods above)
+
+        None of these can contain executable HTML.
+        d.label is also used as a CSS class name —
+        it is always one of two known values so this is safe.
+      */
+      const labelCapitalised =
+        d.label.charAt(0).toUpperCase() + d.label.slice(1);
 
       const row = `
-        <tr>
-
+        <tr id="row-${d.id}">
           <td>${d.id}</td>
-
           <td>${d.timestamp}</td>
-
-          <td class="${d.label}">
-            ${d.label}
-          </td>
-
-          <td>
-            ${Math.round(d.confidence * 100)}%
-          </td>
-
-          <td>${d.temp ?? '—'}</td>
-
+          <td class="${d.label}">${labelCapitalised}</td>
+          <td>${Math.round(d.confidence * 100)}%</td>
+          <td>${d.temp     ?? '—'}</td>
           <td>${d.humidity ?? '—'}</td>
-
-          <td>
-            ${d.blynk_notified ? '✓' : '—'}
-          </td>
-
-          <td>
-            ${d.mqtt_published ? '✓' : '—'}
-          </td>
-
-          <td>
-            ${
-              d.image_url
-              ? `<img class="thumb" src="${d.image_url}">`
-              : '—'
-            }
-          </td>
-
+          <td>${d.blynk_notified ? '✓' : '—'}</td>
+          <td>${d.mqtt_published  ? '✓' : '—'}</td>
+          <td>${imgCell}</td>
         </tr>
       `;
 
       tbody.insertAdjacentHTML('afterbegin', row);
 
-      /*
-        Keep only latest 20 detections
-        so table doesn't grow forever.
-      */
-
+      /* Keep only the latest 20 rows. */
       if (tbody.rows.length > 20) {
         tbody.deleteRow(tbody.rows.length - 1);
       }
 
     });
 
+
     /* ─────────────────────────────────────────────
        ENVIRONMENT EVENT
+
+       SenseHAT readings updated.
+       Just update the three text values.
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('environment', (e) => {
 
       const env = JSON.parse(e.data);
 
-      document.getElementById('env-temp').textContent =
-        env.temp;
-
-      document.getElementById('env-humidity').textContent =
-        env.humidity;
-
-      document.getElementById('env-pressure').textContent =
-        env.pressure;
+      document.getElementById('env-temp').textContent     = env.temp;
+      document.getElementById('env-humidity').textContent = env.humidity;
+      document.getElementById('env-pressure').textContent = env.pressure;
 
     });
 
+
     /* ─────────────────────────────────────────────
        COUNTS EVENT
+
+       Total detection counts changed.
+       Update the counter boxes and bar chart.
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('counts', (e) => {
 
-      const counts = JSON.parse(e.data);
+      const c = JSON.parse(e.data);
 
-      /*
-        Update live counter boxes
-      */
+      document.getElementById('count-dog').textContent    = c.dog    || 0;
+      document.getElementById('count-person').textContent = c.person || 0;
 
-      document.getElementById('count-dog').textContent =
-        counts.dog || 0;
-
-      document.getElementById('count-person').textContent =
-        counts.person || 0;
-
-      /*
-        Update bar chart
-      */
-
-      barChart.data.datasets[0].data = [
-        counts.dog || 0,
-        counts.person || 0
-      ];
-
+      barChart.data.datasets[0].data = [c.dog || 0, c.person || 0];
       barChart.update();
 
     });
 
+
     /* ─────────────────────────────────────────────
        ANALYTICS EVENT
+
+       Rolling average and anomaly score updated.
+       Just update the four metric text values.
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('analytics', (e) => {
 
       const a = JSON.parse(e.data);
 
-      document.getElementById('rolling-avg').textContent =
-        a.rolling_avg;
-
-      document.getElementById('current-hour').textContent =
-        a.current_hour;
-
-      document.getElementById('peak-hour').textContent =
-        a.peak_hour;
-
-      document.getElementById('anomaly-score').textContent =
-        a.anomaly_score;
+      document.getElementById('rolling-avg').textContent   = a.rolling_avg;
+      document.getElementById('current-hour').textContent  = a.current_hour;
+      document.getElementById('peak-hour').textContent     = a.peak_hour;
+      document.getElementById('anomaly-score').textContent = a.anomaly_score;
 
     });
 
+
     /* ─────────────────────────────────────────────
        TIMESERIES EVENT
+
+       24-hour bucketed data updated.
+       Replace chart data completely and redraw.
+
+       The backend sends the full chart_data dict, so
+       the timeseries data is under ts.timeseries.dog,
+       not ts.dog directly — same shape as bootstrap above.
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('timeseries', (e) => {
 
-      const ts = JSON.parse(e.data);
+      const payload = JSON.parse(e.data);
+      const newTs   = payload.timeseries || {};
 
-      /*
-        Replace graph data completely.
-        Simpler and easier to explain.
-      */
-
-      timeChart.data.datasets[0].data = ts.dog || [];
-      timeChart.data.datasets[1].data = ts.person || [];
-
-      tempChart.data.datasets[0].data = ts.temp || [];
-
+      timeChart.data.datasets[0].data = newTs.dog    || [];
+      timeChart.data.datasets[1].data = newTs.person || [];
       timeChart.update();
+
+      tempChart.data.datasets[0].data = newTs.temp || [];
       tempChart.update();
 
     });
 
-    /*
-      Close SSE connection cleanly
-      when page closes.
-    */
 
+    /*
+      Close the SSE connection cleanly when the tab closes.
+      This stops the server queuing events for a dead client.
+    */
     window.addEventListener('beforeunload', () => {
       evtSource.close();
     });

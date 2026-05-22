@@ -146,8 +146,8 @@ class CameraService:
         This is called continuously in the motion detection loop and must
         be as fast as possible.
 
-        Applies a mild brightness/contrast boost (convertScaleAbs) to
-        help motion detection work better in dim conditions.
+        Colour space conversion is applied (RGBA/RGB → BGR) to 
+        produce a frame compatible with OpenCV.
 
         Returns:
             numpy array, or None on failure.

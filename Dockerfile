@@ -4,7 +4,7 @@
 # Architecture:
 #   This project uses a motion-gated detection pipeline:
 #     Picamera2 preview stream → OpenCV motion detection → HQ still capture
-#     → YOLOv8 ONNX inference → EventManager → Blynk/MQTT/SQLite/Cloudinary
+#     → → YOLOv8 ONNX inference → EventManager → Blynk/MQTT/SQLite/MongoDB/Cloudinary
 #
 #   Two services (defined in docker-compose.yml):
 #     smart-detector  — main detection loop (requires Pi hardware)

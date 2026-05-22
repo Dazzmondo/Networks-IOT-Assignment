@@ -6,8 +6,9 @@
 #     Requires Pi hardware (camera + SenseHAT).
 #     Pipeline: preview stream → OpenCV motion → HQ capture → YOLO → events
 #
-#   dashboard
-#     Flask web dashboard. Reads from shared SQLite database.
+#   Flask web dashboard. 
+#     Reads from MongoDB Atlas when configured,
+#     or from shared SQLite database when running locally.
 #     No hardware access needed.
 #     Accessible at http://YOUR_PI_IP:5000
 #     Can also be deployed to Render (gunicorn app.dashboard:app).

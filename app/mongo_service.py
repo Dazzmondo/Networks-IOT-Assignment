@@ -5,7 +5,6 @@ Purpose:
     Mirrors every detection event to MongoDB Atlas in real time, providing
     cloud-based remote persistence alongside the local SQLite database.
 
-
 Architecture — dual-write pattern:
     Every detection is written to BOTH SQLite (local) and MongoDB Atlas (cloud).
     SQLite is the primary store — it is always written first and is the source
@@ -20,7 +19,6 @@ Architecture — dual-write pattern:
     This mirrors the pattern used in real IoT deployments where an edge device
     maintains local storage for resilience and syncs to the cloud when available.
 
-
 Why MongoDB Atlas alongside SQLite?
     SQLite is excellent for local structured queries but cannot be accessed
     remotely — the database file lives on the Pi's SD card.  MongoDB Atlas
@@ -31,14 +29,12 @@ Why MongoDB Atlas alongside SQLite?
     (hourly bucketing, rolling averages, peak detection) that would require
     multiple SQLite queries and Python post-processing to replicate.
 
-
 MongoDB aggregation pipeline:
     Rather than fetching raw rows and computing averages in Python
     (as analytics_service.py does for SQLite), this service uses MongoDB's
     $group, $avg, $sum, and $bucket stages to push computation to the database.
     This is more efficient at scale and demonstrates the aggregation pipeline
     from the Databases module.
-
 
 Collection schema (mirrors SQLite detections table):
     {
@@ -56,12 +52,10 @@ Collection schema (mirrors SQLite detections table):
         "pressure":       float | None,
     }
 
-
 Graceful degradation:
     If MONGO_URI is not set in .env, MongoService is disabled and all
     methods return None/empty results silently.  The rest of the system
     continues to work using SQLite only.
-
 
 Dependencies:
     pip install pymongo dnspython
@@ -114,7 +108,7 @@ class MongoService:
             # Import pymongo here rather than at module level so the rest of
             # the application does not crash if pymongo is not installed.
             from pymongo import MongoClient, ASCENDING, DESCENDING
-            from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+            from pymongo.errors import ServerSelectionTimeoutError
 
             # serverSelectionTimeoutMS prevents the constructor from blocking
             # for 30 s if Atlas is unreachable — fails fast instead.

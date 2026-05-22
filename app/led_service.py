@@ -23,8 +23,6 @@ Usage:
     leds.set_detection("dog")
     leds.set_offline()
 """
-
-import time
 import threading
 
 from config import (

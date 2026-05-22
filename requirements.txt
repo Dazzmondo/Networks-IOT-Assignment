@@ -27,8 +27,8 @@
 #
 #   - BlynkLib NOT listed — install separately (Step 4 above).
 #   
-#    - pymongo[srv] includes dnspython which is required for MongoDB Atlas
-#      SRV DNS resolution (the mongodb+srv:// URI scheme).
+#   - pymongo[srv] includes dnspython which is required for MongoDB Atlas
+#     SRV DNS resolution (the mongodb+srv:// URI scheme).
 # =============================================================================
 
 # ── AI / Computer Vision (ONNX — no PyTorch) ─────────────────────────────────

@@ -9,11 +9,10 @@ Why add SenseHAT environmental data?
     provide additional real data sources alongside the camera.
 
 Module structure:
-    This module uses a single function that returns a dictionary.  The
+    This module defines a service class with a single read() method.  The
     if __name__ == "__main__": block allows standalone testing.
 
-    The SenseHAT object is created once at module level and reused, which
-    is more efficient than creating a new instance on every call.
+    The SenseHAT object is created once on instantiation and reused across calls.
 
 Usage:
     from env_data_service import EnvDataService
