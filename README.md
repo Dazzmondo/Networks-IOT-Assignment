@@ -8,19 +8,40 @@ A modular, event-driven IoT computer vision system running on a Raspberry Pi tha
 
 | Technology | Purpose |
 |---|---|
-| Raspberry Pi | Edge device |
-| Picamera2 | Pi Camera Module still-image capture (CSI port) |
-| YOLOv8 (Ultralytics) | AI object detection |
-| SenseHAT | LED physical feedback + environmental sensors |
-| Docker / Docker Compose | Containerised, reproducible deployment |
-| BlynkLib | IoT dashboard and push notifications (socket connection) |
-| HiveMQ (MQTT / paho-mqtt) | Lightweight event messaging |
-| SQLite | Persistent detection history |
-| Flask + Gunicorn | Web dashboard, deployable to Render |
-| Cloudinary | Remote image hosting for detection photos |
-| Python | Application logic |
-| python-dotenv | Environment-based configuration |
-
+| Raspberry Pi 4 | Edge computing device running the full IoT pipeline |
+| Raspberry Pi OS (Linux) | Operating system for device services and hardware integration |
+| Python 3 | Core application logic and service orchestration |
+| OpenCV | Motion detection, image preprocessing, and computer vision utilities |
+| YOLOv8 (Ultralytics) | Real-time AI object detection for dogs and humans |
+| ONNX Runtime | Efficient local inference engine for YOLOv8 model execution |
+| Picamera2 | Raspberry Pi Camera Module image capture (CSI interface) |
+| Sense HAT | Environmental sensing (temperature, humidity, pressure) and LED feedback |
+| Flask | Web server and dashboard backend |
+| Jinja2 | HTML template rendering for Flask dashboard pages |
+| Gunicorn | Production WSGI server for Render deployment |
+| Chart.js | Real-time analytics and dashboard visualisation |
+| chartjs-adapter-date-fns | Time-based formatting support for Chart.js time-series graphs |
+| Server-Sent Events (SSE) | Live event streaming from Flask server to browser dashboard |
+| SQLite | Local embedded database for persistent detection history |
+| MongoDB Atlas | Cloud-hosted database for remote analytics and deployment support |
+| MongoDB Aggregation Pipeline | Server-side statistical aggregation and hourly analytics |
+| Cloudinary | Cloud image hosting for annotated detection images |
+| HiveMQ Cloud | MQTT broker for IoT message transport |
+| paho-mqtt | Python MQTT client library |
+| BlynkLib | Mobile IoT dashboard and push notification integration |
+| Docker | Containerised deployment environment |
+| Docker Compose | Multi-service container orchestration |
+| python-dotenv | Environment variable and configuration management |
+| JSON | Structured API responses and MQTT payload formatting |
+| REST API | Dashboard data endpoints for detections, analytics, and environment data |
+| HTML5 | Dashboard page structure |
+| CSS3 | Dashboard styling and responsive layout |
+| JavaScript | Frontend dashboard interactivity and live updates |
+| EventSource API | Browser-side SSE client for real-time dashboard streaming |
+| Threading (Python threading module) | Background SSE worker and concurrent client handling |
+| Queue (Python queue module) | Thread-safe communication between SSE worker and clients |
+| datetime / timedelta | Time-window analytics and hourly bucket calculations |
+| Z-score statistical analysis | Detection anomaly scoring and behavioural trend analysis |
 ---
 
 ## Architecture
@@ -165,11 +186,11 @@ Cloudinary is used to make Pi-captured images accessible from the internet. Dete
 
 ### Future Improvements
 
-- MQTT subscription for remote LED control (matching the week 9 lab exercise).
+- MQTT subscription for remote LED control
 - Historical analytics charts in the Flask dashboard.
 - Edge TPU acceleration (Coral USB) for faster inference.
-- Systemd service for automatic startup (matching the week 9 lab systemd section).
-- Behavioural classification beyond label detection.
+- Systemd service for automatic startup
+- Behavioural classification beyond label detection (e.g. dog urinating).
 
 
 
@@ -276,27 +297,6 @@ Ensure your active repository profile contains a robust system filter rule to en
 1. **Pi Camera:** Insert the structural ribbon data cable directly into the CSI port assembly interface. **Orientation:** The blue insulated strip must face directly toward the USB terminal block array.
 2. **Sense HAT:** Align and securely mate the hardware HAT onto the 40-pin GPIO array header block. Press downward firmly and uniformly to avoid bending connection pins.
 
-### System Interface Authorization
-Open a terminal shell session on your target Raspberry Pi and execute the interface parameters control tool:
-
-```bash
-sudo raspi-config
-```
-
-1. Navigate using key prompts: **Interface Options** \(\rightarrow\) **Camera** \(\rightarrow\) **Enable** \(\rightarrow\) **Yes**.
-2. Select **Finish** and trigger a full hardware power cycle reboot:
-
-```bash
-sudo reboot
-```
-
-3. Post-initialization, run a physical interface sweep to confirm detection status:
-
-```bash
-libcamera-hello --list-cameras
-```
-*Verification standard: The output logging array must return and identify at least one active imaging sensor unit.*
-
 ---
 
 ## PART 3 — Pi Software Setup
@@ -372,42 +372,8 @@ mkdir -p app/templates models images logs
 ```
 
 ### 4.3 Workspace Directory Tree Standard
-Verify that your target workspace accurately reflects the required system module tree distribution template structural map details below:
+Verify that your target workspace accurately reflects the project structure shown earlier in the README.
 
-```text
-~/Networks-IOT-Assignment/
-│
-├── .env                          # Local Private Credentials Config Block
-├── .env.example                  # Environment Variables Distribution Template
-├── .gitignore                    # Local Track Filter Exclusion Table
-├── requirements.txt              # Primary Application Dependencies Manifest
-├── README.md                     # Project Technical Documentation Module
-│
-├── app/
-│   ├── main.py                   # Master Application Thread Executive Core
-│   ├── dashboard.py              # Interface Framework Host Engine
-│   ├── config.py                 # Core Properties Component Mapping Module
-│   ├── events.py                 # Alert Management Logic Tree
-│   ├── logger_service.py         # Diagnostic Tracking Matrix Provider
-│   ├── camera_service.py         # Capture Subsystem Logic Wrapper
-│   ├── detector_service.py       # Inference Acceleration Handler
-│   ├── motion_service.py         # Delta Imaging Evaluation Vector Core
-│   ├── led_service.py            # Hardware Array Render Module
-│   ├── event_manager.py          # Centralized State Dispatch Controller
-│   ├── blynk_service.py          # Cloud Telemetry Interface Connector
-│   ├── mqtt_service.py           # Message Transport Layer Dispatcher
-│   ├── db_service.py             # Relational Database Workspace Pipeline
-│   ├── env_data_service.py       # Environmental Telemetry Collector
-│   ├── cloudinary_service.py     # Image Asset Cloud Storage Service
-│   └── templates/
-│       └── dashboard.html        # Engine Target View Presentation Markup
-│
-├── models/
-│   └── yolov8n.onnx              # Compiled Network Optimization Graph Array
-│
-├── images/                       # Temporary System Runtime Output Matrix 
-└── logs/                         # File Output Logging Matrix Destination
-```
 
 ### 4.4 Set Up Version Control Exclusions
 Generate a configuration workspace exclusion track manifest file using your shell terminal:
