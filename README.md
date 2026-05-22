@@ -25,30 +25,36 @@ A modular, event-driven IoT computer vision system running on a Raspberry Pi tha
 
 ## Architecture
 
-```
-Pi Camera (CSI)
+```text
+SenseHAT + Pi Camera (CSI)
       │
       ▼
-CameraService          ← Picamera2 still-image capture
+CameraService           ← Picamera2 image capture
       │
       ▼
-DetectorService        ← YOLOv8 inference on image file
+MotionService           ← OpenCV motion detection (Absolute Difference)
       │
       ▼
-EventManager           ← Central event router
+DetectorService         ← YOLOv8 ONNX inference (COCO dog/person detection)
       │
-      ├─► LEDService              → SenseHAT LED matrix (green idle / red detection)
-      ├─► CameraService           → save_detection_image() on dog detections
-      ├─► CloudinaryService       → upload detection image, get public URL
-      ├─► BlynkService (thread)   → Blynk Cloud dashboard + push notifications
-      ├─► MQTTService (thread)    → HiveMQ MQTT topic publish
-      ├─► DBService               → SQLite detection log
-      └─► EnvDataService          → SenseHAT temperature / humidity / pressure
+      ▼
+EventManager            ← Central event router (WAL Mode, Cooldown, Z-score Analytics)
+      │
+      ├─► LEDService              → SenseHAT LED matrix (Blue idle / Green normal / Red alert)
+      ├─► CloudinaryService       → Upload annotated frames, get public URL
+      ├─► BlynkService (thread)   → Blynk Cloud dashboard + mobile push notifications
+      ├─► MQTTService (thread)    → HiveMQ MQTT topic publish (Events & Telemetry)
+      ├─► DBService               → Local SQLite detection log & event logging
+      └─► EnvDataService          → SenseHAT environmental telemetry (Temp/Humid/Pres)
 
 Flask Dashboard (dashboard.py)
       │
-      └─► DBService               → reads detection history from SQLite
-                                    serves /api/environment (week 9 lab pattern)
+      ├─► DBService               → Reads local detection history (SQLite)
+      └─► SSE (/stream)           → Real-time live push updates to frontend Chart.js
+
+MongoDB Atlas (Cloud Mirror)
+      │
+      └─► Sync (Mirror)           → Syncs with SQLite for historical analytics & cloud backups
 ```
 
 ---
@@ -99,6 +105,8 @@ smart-iot-detector/
 │   ├── blynk_service.py      ← BlynkLib socket connection (background thread)
 │   ├── mqtt_service.py       ← HiveMQ MQTT publishing (paho loop_start)
 │   ├── db_service.py         ← SQLite detection log
+│   ├── mongo_service.py      ← MongoDB service for cloud storage/logging
+│   ├── analytics.py          ← data aggregation and trends processor
 │   ├── led_service.py        ← SenseHAT LED matrix feedback
 │   ├── env_data_service.py   ← SenseHAT environmental sensor readings
 │   ├── cloudinary_service.py ← Cloudinary image upload
@@ -116,6 +124,9 @@ smart-iot-detector/
 ---
 
 ## Architecture Diagram
+
+![System Architecture Diagram](projectGraphic.png)
+
 
 ---
 
@@ -163,7 +174,7 @@ Cloudinary is used to make Pi-captured images accessible from the internet. Dete
 
 
 
---
+---
 
 ## Setup Guide
 
@@ -420,27 +431,8 @@ EOF
 nano .env
 ```
 
-Paste your local configurations into the file editor interface context:
-```ini
-BLYNK_AUTH_TOKEN=your_token
-CONFIDENCE_THRESHOLD=0.60
-CAMERA_WARMUP_SECONDS=2.0
-LOOP_INTERVAL_SECONDS=2.0
-IMAGE_SAVE_DIR=images
-LED_DETECTION_HOLD_SECONDS=2.0
-EVENT_COOLDOWN_SECONDS=15
-MQTT_BROKER=broker.hivemq.com
-MQTT_PORT=1883
-MQTT_USER_ID=userid
-DB_PATH=detections.db
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-CLOUDINARY_FOLDER=iot-detector
-FLASK_HOST=0.0.0.0
-FLASK_PORT=5000
-FLASK_DEBUG=false
-```
+Paste your local configurations into the file editor.
+
 *To exit Nano: Press `Ctrl+O` $\rightarrow$ `Enter` to commit, then `Ctrl+X` to close the editor.*
 
 ### 4.6 Compile and Deploy ONNX Object Inference Graph
@@ -843,26 +835,71 @@ docker compose up
 
 ---
 
-## Supporting Resources:
-https://docs.ultralytics.com/datasets/detect/coco
-https://automaticaddison.com/motion-detection-using-opencv-on-raspberry-pi-4/
-https://docs.opencv.org/3.4/pages.html
-https://docs.opencv.org/3.4/d6/d00/tutorial_py_root.html
-https://www.youtube.com/watch?v=P4Z8_qe2Cu0 (OpenCV)
-https://www.youtube.com/watch?v=kTp5xUtcalw (Docker)
-https://www.youtube.com/watch?v=lEcULR30-GM (Docker)
-https://docs.docker.com/reference/dockerfile/
-https://docs.docker.com/reference/compose-file/
-https://onnxruntime.ai/docs/execution-providers/
-https://docs.ultralytics.com/integrations/onnx
-https://onnxruntime.ai/docs/api/python/api_summary.html
-https://www.w3schools.com/python/ref_keyword_lambda.asp
+## Supporting Resources
 
-AI LLMs used:
-Claude
-ChatGPT
-Gemini
+### Documentation & Guides
 
-LLMs primarilly used to analyse code for errors, help with consistent system design (connecting modules in a functional way), README formatting, and for diagram generation of architecture.
-Most comments in src code were either written personally or autofilled by VSCode, but occasionally
-LLMs may have been used to help explain specific code.
+#### Computer Vision & Object Detection
+* [Ultralytics COCO Dataset Guide](https://docs.ultralytics.com/datasets/detect/coco)
+* [Ultralytics ONNX Integration](https://docs.ultralytics.com/integrations/onnx)
+* [OpenCV Main Documentation (v3.4)](https://docs.opencv.org/3.4/pages.html)
+* [OpenCV Python Tutorials](https://docs.opencv.org/3.4/d6/d00/tutorial_py_root.html)
+* [Motion Detection using OpenCV on Raspberry Pi 4](https://automaticaddison.com/motion-detection-using-opencv-on-raspberry-pi-4/)
+
+#### ONNX Runtime
+* [ONNX Runtime Execution Providers](https://onnxruntime.ai/docs/execution-providers/)
+* [ONNX Runtime Python API Summary](https://onnxruntime.ai/docs/api/python/api_summary.html)
+
+#### Containerization
+* [Docker Dockerfile Reference](https://docs.docker.com/reference/dockerfile/)
+* [Docker Compose File Reference](https://docs.docker.com/reference/compose-file/)
+
+#### Frontend Development & Chart.js
+* [Chart.js Getting Started](https://www.chartjs.org/docs/latest/getting-started/)
+* [Chart.js Line Charts](https://www.chartjs.org/docs/latest/charts/line.html)
+* [Chart.js Bar Charts](https://www.chartjs.org/docs/latest/charts/bar.html)
+* [Chart.js Cartesian Time Axes](https://www.chartjs.org/docs/latest/axes/cartesian/time.html)
+* [Chart.js Data Updates](https://www.chartjs.org/docs/latest/developers/updates.html)
+* [Chart.js Library CDN (v4.4.1)](https://cdnjs.com/libraries/Chart.js/4.4.1)
+* [Chart.js date-fns Adapter (NPM)](https://www.npmjs.com/package/chartjs-adapter-date-fns)
+
+#### Web APIs & Backend Streaming
+* [MDN Web Docs: Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
+* [MDN Web Docs: EventSource API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
+* [MDN Web Docs: Document Object Model (DOM)](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+* [MDN Web Docs: insertAdjacentHTML Method](https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML)
+* [WHATWG Living Standard: Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html)
+* [Flask Documentation: Streaming Patterns](https://flask.palletsprojects.com/en/stable/patterns/streaming/)
+
+#### Python Core
+* [W3Schools: Python Lambda Keyword](https://www.w3schools.com/python/ref_keyword_lambda.asp)
+
+### Video Tutorials
+* [YouTube: OpenCV Tutorial](https://www.youtube.com/watch?v=P4Z8_qe2Cu0)
+* [YouTube: Docker Overview](https://www.youtube.com/watch?v=kTp5xUtcalw)
+* [YouTube: Docker Full Stack Implementation](https://www.youtube.com/watch?v=lEcULR30-GM)
+
+
+https://sqlite.org/wal.html
+
+---
+
+## AI Assistants & LLMs
+
+Large Language Models (LLMs) were utilized during the development of this project. The majority of the code was first written personally based on the Computer Systems & Networks Module lectures and labs, in addition to the knowledge from other modules (Programming, Web Development, Databases), before being tweaked.
+
+The `analytics_service.py` file was largely generated with Claude to help integrating both MongoDB Atlas and the SQLite local database with the Flask web dashboard. New topics like TimeSeries, Z-scores, anomaly scoring, rolling averages, and Server-Sent Events for the real-time monitoring of the web dashboard are mainly focused in that file, though other files also have sections relating to these concepts, such as `dashboard.html`. Resources relating to these topics have been included in the resources section.
+
+### Tools Used
+* **Claude** (Anthropic)
+* **ChatGPT** (OpenAI)
+* **Gemini** (Google)
+
+### Scope of Use
+* **Code Analysis**: Various LLMs were used to identify bugs and syntax errors.
+* **System Design**: Various LLMs were used to align modular components to ensure functional, end-to-end integration.
+* **Documentation**: Gemini was used for structuring and formatting the project `README.md`.
+* **Architecture Diagrams**: ChatGPT was used to generate the Architecture Diagram
+* **Code Explanation**: Various LLMs were occasionally used to add context and clarify complex logic blocks
+
+*Note: The majority of comments in the source code were written manually or auto-filled via VSCode extensions.*

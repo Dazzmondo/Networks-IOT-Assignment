@@ -21,6 +21,12 @@
 #   libcamera (used by Picamera2) requires kernel-level access to the
 #   Pi's CSI camera. The container mounts /dev from the host and runs
 #   in privileged mode so libcamera can find the camera device.
+#
+# MongoDB:
+#   MongoService connects outbound to Atlas over TCP 27017.
+#   No inbound ports or additional Docker networking config is required --
+#   Atlas is a hosted service and the container connects to it like any
+#   other external HTTPS/TCP service.
 # =============================================================================
 
 FROM python:3.11-slim

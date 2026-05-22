@@ -17,8 +17,8 @@ Why motion detection as a gate?
               ↓ NO → continue monitoring (YOLO never runs)
               ↓ YES → capture HQ still → run YOLO → handle event
 
-Why Absolute Difference over MOG2 
-(see source: https://automaticaddison.com/motion-detection-using-opencv-on-raspberry-pi-4/)?
+Why Absolute Difference over MOG2?
+(see source: https://automaticaddison.com/motion-detection-using-opencv-on-raspberry-pi-4/)
     For a stationary indoor camera detecting dogs and humans:
     - Absolute difference is faster and lighter on the Pi
     - MOG2 adapts its background continuously, which can cause it to

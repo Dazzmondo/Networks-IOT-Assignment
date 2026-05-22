@@ -3,7 +3,7 @@ Purpose:
     Publishes detection events and environmental telemetry to HiveMQ's
     public MQTT broker using paho-mqtt.
 
-    Last Will and Testament pattern is also implemented. 
+    Last Will and Testament pattern is implemented. 
     The broker publishes "offline" automatically if the device disconnects unexpectedly.
 
     All topics are configured in config.py via MQTT_USER_ID so they are

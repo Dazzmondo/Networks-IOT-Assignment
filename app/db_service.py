@@ -8,6 +8,15 @@ Why SQLite?
     - Sufficient for the event volume a home IoT system generates.
     - Historical data handling with queries, which is also used by the Flask dashboard.
 
+Dual-write pattern:
+    DBService accepts an optional MongoService instance at construction.
+    When provided, every successful SQLite write is immediately mirrored
+    to MongoDB Atlas.  The mirror write is fire-and-forget — a MongoDB
+    failure does not roll back the SQLite write or affect the pipeline.
+ 
+    This keeps all persistence logic in one place (DBService) rather than
+    scattering mongo.insert_detection() calls across event_manager.py.
+
 Schema:
     Table: detections
     ┌─────────────────┬──────────┬───────────────────────────────────────┐
@@ -27,7 +36,7 @@ Schema:
 
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from config import DB_PATH
 from logger_service import logger
@@ -39,10 +48,22 @@ class DBService:
 
     A fresh connection is opened for every operation to avoid locking
     issues across threads.  The schema is created automatically on first use.
+    
+    Args:
+        mongo_service: optional MongoService instance. When provided, every
+                       successful SQLite write is mirrored to MongoDB Atlas.
+                       Pass None (default) to disable cloud mirroring.
     """
 
-    def __init__(self):
+    def __init__(self, mongo_service=None):
         self._db_path = DB_PATH
+
+        # -- Store the optional MongoDB mirror reference ----------------------
+        # _mongo is None when MongoDB is not configured or unavailable.
+        # All mirror calls are guarded with `if self._mongo:` so this
+        # class behaves identically whether or not MongoDB is present.
+        self._mongo = mongo_service
+
         # Ensure parent directory exists before SQLite tries to open the file.
         parent_dir = os.path.dirname(os.path.abspath(self._db_path))
         if parent_dir:
@@ -103,6 +124,10 @@ class DBService:
         """
         Insert a new detection record.
 
+        SQLite is always written first. The MongoDB mirror is attempted
+        after a successful SQLite insert, using the new row's id as the
+        sqlite_id field for deduplication in Atlas.
+
         Returns the new row ID, or None on failure.
         """
         try:
@@ -128,12 +153,28 @@ class DBService:
                     ),
                 )
                 conn.commit()
+                row_id = cursor.lastrowid
+
                 logger.info(
-                    f"DB logged → id={cursor.lastrowid} "
+                    f"DB logged → id={row_id} "
                     f"label={label} confidence={confidence:.2f} "
                     f"blynk={blynk_notified} mqtt={mqtt_published}"
                 )
-                return cursor.lastrowid
+
+                # -- Mirror to MongoDB Atlas ----------------------------------
+                
+                # Fetch the full row so the document shape matches what
+                # get_recent() returns — keeps the mirror consistent.
+                # The mirror is attempted after commit so SQLite is safe
+                # even if MongoDB raises an exception.
+                if self._mongo:
+                    row = conn.execute(
+                        "SELECT * FROM detections WHERE id = ?", (row_id,)
+                    ).fetchone()
+                    if row:
+                        self._mongo.insert_detection(dict(row))
+
+                return row_id
         except Exception as error:
             logger.error(f"Failed to log detection: {error}")
             return None
@@ -162,3 +203,58 @@ class DBService:
         except Exception as error:
             logger.error(f"DB count query failed: {error}")
             return {}
+
+    def get_since_id(self, last_id: int) -> list[dict]:
+        """
+        Return all detections with id > last_id, oldest first.
+ 
+        Used by the Server-Sent Events (SSE) worker to fetch only new rows on each 
+        poll tick rather than re-reading the full table.  The caller tracks last_id
+        and increments it as rows are processed.
+ 
+        Args:
+            last_id: the highest row id already seen by the caller.
+ 
+        Returns:
+            List of detection dicts, ordered by id ascending (oldest first).
+        """
+        try:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT * FROM detections WHERE id > ? ORDER BY id ASC",
+                    (last_id,),
+                ).fetchall()
+                return [dict(row) for row in rows]
+        except Exception as error:
+            logger.error(f"DB get_since_id failed: {error}")
+            return []
+ 
+ 
+    def get_last_24h(self) -> list[dict]:
+        """
+        Return all detections from the last 24 hours, oldest first.
+ 
+        Used by AnalyticsService to compute rolling averages and build
+        Chart.js time-series buckets.  The 24-hour window means the
+        analytics stay relevant as the system runs over multiple days.
+ 
+        Returns:
+            List of detection dicts ordered by timestamp ascending.
+        """
+        try:
+            cutoff = (datetime.now() - timedelta(hours=24)).isoformat(
+                timespec="seconds"
+            )
+            with self._connect() as conn:
+                rows = conn.execute(
+                    """
+                    SELECT * FROM detections
+                    WHERE timestamp >= ?
+                    ORDER BY timestamp ASC
+                    """,
+                    (cutoff,),
+                ).fetchall()
+                return [dict(row) for row in rows]
+        except Exception as error:
+            logger.error(f"DB get_last_24h failed: {error}")
+            return []

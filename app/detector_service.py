@@ -1,6 +1,4 @@
 """
-detector_service.py
-===================
 Purpose:
     Runs YOLOv8 inference via ONNX Runtime and returns structured detections
     with proper post-processing including Non-Maximum Suppression (NMS).

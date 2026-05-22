@@ -116,7 +116,13 @@ class EventManager:
         box,
         image_path,
     ):
-        """Handle a confirmed human detection."""
+        """
+        Handle a confirmed human detection.
+        Unlike dogs, we do not upload annotated images for humans.
+        Cloudinary — image_path is logged to SQLite as-is for reference.
+        The box parameter is accepted for signature consistency with
+        _handle_dog_detected but is not used here.
+        """
         logger.info("Human detected.")
 
         self._leds.set_detection("person")

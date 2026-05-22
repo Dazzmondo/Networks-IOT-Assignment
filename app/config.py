@@ -18,6 +18,7 @@ Coverage:
     - Flask dashboard
     - SenseHAT LED feedback colours
     - Event cooldown / spam prevention
+    - MongoDB Atlas (cloud mirror)
 """
 
 import os
@@ -148,6 +149,17 @@ DB_PATH = os.getenv(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "detections.db"),
 )
 
+# ── MongoDB Atlas (cloud mirror) ──────────────────────────────────────────────
+# MONGO_URI is the full connection string from the Atlas "Connect" dialog.
+# Format: mongodb+srv://<user>:<password>@<cluster>.mongodb.net/
+#
+# Leave MONGO_URI blank to disable MongoDB — the system runs on SQLite only.
+# When set, every detection is mirrored to Atlas in addition to SQLite.
+# The Render-deployed dashboard reads from MongoDB when MONGO_URI is set,
+# falling back to SQLite API responses otherwise.
+MONGO_URI        = os.getenv("MONGO_URI",        "")
+MONGO_DB_NAME    = os.getenv("MONGO_DB_NAME",    "iot_detector")
+MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "detections")
 
 # ── Cloudinary image hosting ──────────────────────────────────────────────────
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")

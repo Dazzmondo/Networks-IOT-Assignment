@@ -29,6 +29,7 @@ Services started:
     - MQTTService        (paho-mqtt background thread)
     - CloudinaryService  (image upload)
     - EventManager       (routes detections to all services)
+    - MongoService       (MongoDB Atlas cloud mirror -- optional)
 """
 
 import sys
@@ -46,6 +47,7 @@ from cloudinary_service import CloudinaryService
 from env_data_service   import EnvDataService
 from event_manager      import EventManager
 from config             import MOTION_LOOP_DELAY, TARGET_CLASSES
+from mongo_service      import MongoService
 
 
 def main():
@@ -64,6 +66,12 @@ def main():
         logger.error(f"Cannot start — camera unavailable: {error}")
         led_service.set_offline()
         sys.exit(1)
+
+    # -- MongoDB Atlas (cloud mirror) ----------------------------------------
+    # MongoService is non-fatal -- if Atlas is unreachable or unconfigured
+    # the system continues with SQLite only.  mongo_service is passed into
+    # DBService so the dual-write pattern is handled transparently.
+    mongo_service = MongoService()        
 
     # SQLite is critical — exit if unavailable.
     try:
@@ -119,6 +127,10 @@ def main():
     logger.info(
         "All services ready. "
         f"Monitoring for motion (target: {', '.join(TARGET_CLASSES)})."
+    )
+    logger.info(
+        f"MongoDB mirror: "
+        f"{'enabled' if mongo_service.is_enabled() else 'disabled (SQLite only)'}"
     )
 
     # ── Main motion-gated detection loop ──────────────────────────────────────

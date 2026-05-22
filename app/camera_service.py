@@ -1,6 +1,4 @@
 """
-camera_service.py
-=================
 Purpose:
     Manages the Pi Camera Module using Picamera2.
     Provides TWO distinct capture modes:

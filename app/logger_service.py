@@ -19,7 +19,7 @@ os.makedirs("logs", exist_ok=True)
 # Named logger doesn't depend on root logger config
 logger = logging.getLogger("IoTDetector")
 logger.setLevel(logging.INFO)
- 
+
 # Only add handlers if none exist yet (prevents duplicate lines on reimport).
 if not logger.handlers:
     _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")

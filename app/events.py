@@ -3,6 +3,7 @@ Purpose:
     Defines all named system events as module-level string constants.
 
 Named constants mean the full set of events the system can produce is visible in one place.
+Must match Blynk console configuration exactly.
 
 These event codes must EXACTLY match the event codes configured in the
 Blynk console (case-sensitive).

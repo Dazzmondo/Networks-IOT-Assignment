@@ -51,7 +51,7 @@ class BlynkService:
     Usage:
         blynk_svc = BlynkService()
         blynk_svc.update_status("SYSTEM ONLINE")
-        blynk_svc.log_detection_event("dog_detected", "Dog detected")
+        blynk_svc.log_event("dog_detected", "Dog detected")
         blynk_svc.write_env_data(temp=22.5, humidity=48.2)
         blynk_svc.stop()
     """

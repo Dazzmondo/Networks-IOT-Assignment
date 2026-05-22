@@ -26,6 +26,9 @@
 #     Accessible in venv via --system-site-packages.
 #
 #   - BlynkLib NOT listed — install separately (Step 4 above).
+#   
+#    - pymongo[srv] includes dnspython which is required for MongoDB Atlas
+#      SRV DNS resolution (the mongodb+srv:// URI scheme).
 # =============================================================================
 
 # ── AI / Computer Vision (ONNX — no PyTorch) ─────────────────────────────────
@@ -44,6 +47,9 @@ cloudinary
 flask
 flask-cors
 gunicorn
+
+# ── Cloud database (MongoDB Atlas) ────────────────────────────────────────────
+pymongo[srv]
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 python-dotenv

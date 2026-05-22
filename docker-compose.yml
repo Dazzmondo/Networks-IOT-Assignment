@@ -22,10 +22,12 @@
 #   privileged: true and /dev mount are required for libcamera (CSI camera)
 #   and SenseHAT GPIO access inside the container.
 #
+# MongoDB Atlas:
+#   Both services read MONGO_URI from .env automatically via env_file.
+#   The smart-detector uses it for the dual-write mirror.
+#   The dashboard uses it to serve the Render-accessible API endpoints.
+#   No extra Docker networking is needed -- Atlas is an external service.
 # =============================================================================
-
-version: '3.9'
-
 services:
 
   # ── Detection loop ──────────────────────────────────────────────────────────
@@ -67,7 +69,7 @@ services:
     command: [
       "gunicorn",
       "--workers", "1",
-      "--threads", "2",
+      "--threads", "4",
       "--bind", "0.0.0.0:5000",
       "app.dashboard:app"
     ]
