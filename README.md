@@ -82,19 +82,40 @@ MongoDB Atlas (Cloud Mirror)
 
 ## Features
 
-- **Still-image detection** — Pi Camera captures a JPEG every 2 seconds; YOLOv8 analyses it for dogs and humans.
-- **Photo on dog detection** — a timestamped JPEG is archived every time a dog is confirmed, and optionally uploaded to Cloudinary.
-- **Physical LED feedback** — SenseHAT LED matrix shows blue (starting), green (idle), red (detection), off (shutdown). Follows the exact pattern from the module labs.
-- **SenseHAT environmental data** — temperature, humidity, and pressure are read alongside detections and published to Blynk (V4/V5) and MQTT telemetry topic.
-- **Blynk Cloud dashboard** — live status, detection counters (V0–V5), and push notifications via BlynkLib (socket connection, background thread).
-- **MQTT event publishing** — JSON payloads published to HiveMQ on detection events and environmental telemetry, following the topic naming from the MQTT lab.
-- **LWT (Last Will and Testament)** — broker publishes `offline` automatically if the device disconnects unexpectedly (MQTT lab pattern).
-- **SQLite persistence** — every detection (label, confidence, image path, Cloudinary URL, SenseHAT readings, timestamp) is logged to `detections.db`.
-- **Flask web dashboard** — HTML dashboard with recent detections, counts, and Cloudinary images; API endpoints; deployable to Render.
-- **Event cooldown** — prevents notification spam when a subject stays in frame.
-- **Docker containerisation** — reproducible deployment; detector and dashboard run as separate services.
-- **Structured logging** — all events written to `logs/events.log` and stdout.
-- **Environment-based configuration** — all tuneable values in `.env`.
+- **Motion-gated AI detection pipeline** — motion sensor triggers high-quality image capture before YOLO inference, reducing unnecessary processing and improving efficiency on the Raspberry Pi.
+- **Still-image detection** — Pi Camera captures JPEG images for YOLOv8 analysis to detect dogs and humans.
+- **Dual object classification** — independently tracks both dog and human detections with separate analytics, counters, and notifications.
+- **ONNX-accelerated inference** — YOLOv8 exported to ONNX format for faster and lighter CPU inference on edge hardware.
+- **Photo on dog detection** — timestamped annotated JPEG archived whenever a dog is confirmed, optionally uploaded to Cloudinary.
+- **Bounding-box image annotation** — detected dogs are highlighted with YOLO confidence overlays before upload and storage.
+- **Physical LED feedback** — SenseHAT LED matrix shows system states (startup, idle, detection, shutdown) using patterns adapted from module labs.
+- **SenseHAT environmental sensing** — temperature, humidity, and pressure captured alongside detections and included in analytics, MQTT telemetry, and Blynk updates.
+- **Real-time Flask dashboard** — live web dashboard showing detections, environmental readings, analytics, and detection history.
+- **Server-Sent Events (SSE) live updates** — dashboard updates automatically without page refresh using event-stream push architecture.
+- **Real-time Chart.js analytics** — interactive hourly detection graphs and environmental trend visualisations.
+- **Rolling-average analytics** — computes 24-hour rolling averages to establish baseline detection behaviour.
+- **Anomaly detection (Z-score)** — statistical anomaly scoring identifies unusual spikes in activity relative to historical behaviour.
+- **Peak activity analysis** — identifies the busiest hourly detection period over the previous 24 hours.
+- **MongoDB aggregation pipeline analytics** — server-side hourly bucketing and statistical aggregation when MongoDB Atlas is enabled.
+- **SQLite fallback architecture** — system automatically falls back to local SQLite analytics when MongoDB is unavailable.
+- **Cloud database deployment support** — MongoDB Atlas allows the Render-hosted dashboard to access live remote data without direct Pi filesystem access.
+- **Blynk Cloud dashboard** — live status updates, detection counters, environmental telemetry, and push notifications using BlynkLib.
+- **MQTT event publishing** — structured JSON event payloads published to HiveMQ Cloud for detections and telemetry.
+- **MQTT telemetry topics** — environmental readings continuously published as lightweight IoT telemetry streams.
+- **LWT (Last Will and Testament)** — MQTT broker automatically publishes offline status on unexpected disconnects.
+- **REST API endpoints** — JSON APIs expose detections, counts, analytics, environment readings, and service status.
+- **Cloud-hosted image access** — detection images accessible remotely through Cloudinary public URLs.
+- **Persistent detection history** — SQLite stores label, confidence, timestamps, image paths, cloud URLs, notification status, and environmental readings.
+- **Event cooldown system** — prevents repeated notification spam while a subject remains in frame.
+- **Threaded background workers** — separate worker thread handles live SSE event broadcasting without blocking Flask routes.
+- **Thread-safe event queues** — queue-based architecture safely distributes live updates to multiple connected dashboard clients.
+- **Automatic SSE reconnection** — browser EventSource API reconnects automatically if the live dashboard stream drops.
+- **Docker containerisation** — reproducible deployment with isolated detector and dashboard services.
+- **Gunicorn production deployment** — Flask dashboard deployable to Render using threaded Gunicorn workers.
+- **Environment-based configuration** — all configurable settings managed through `.env` variables.
+- **Structured logging** — application events and errors written to both stdout and persistent log files.
+- **Graceful cloud fallback behaviour** — system continues operating locally if cloud services (MongoDB, MQTT, Cloudinary) become unavailable.
+- **Modular service architecture** — detector, analytics, database, MQTT, dashboard, and notification systems separated into independent services for maintainability.
 
 ---
 
