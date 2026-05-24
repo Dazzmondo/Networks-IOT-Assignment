@@ -262,41 +262,59 @@ Cloudinary is used to make Pi-captured images accessible from the internet. Dete
 
 ---
 
-## Setup Guide
+# Setup Guide
 
-This guide walks you through setting up the external accounts, hardware configuration, system software, project structure, dependencies, testing, end-to-end running, and troubleshooting for the **Networks-IOT-Assignment** project.
+This guide walks you through setting up the external accounts, hardware configuration, system software, project structure, dependencies, testing, deployment, and troubleshooting for the **Networks-IOT-Assignment** project.
 
 ---
 
-## 📋 Table of Contents
+# 📋 Table of Contents
+
 1. [Part 1: External Accounts Setup](#part-1--external-accounts-setup)
 2. [Part 2: Raspberry Pi Hardware](#part-2--raspberry-pi-hardware)
 3. [Part 3: Pi Software Setup](#part-3--pi-software-setup)
 4. [Part 4: Project Setup on the Pi](#part-4--project-setup-on-the-pi)
-5. [Part 5: Individual Component Testing](#part-5--test-each-component-individually)
+5. [Part 5: Individual Component Testing](#part-5--individual-component-testing)
 6. [Part 6: Running the Full System](#part-6--running-the-full-system)
 7. [Part 7: End-to-End Verification Checklist](#part-7--end-to-end-verification-checklist)
 8. [Part 8: Blynk Mobile App Configuration (Android)](#part-8--blynk-mobile-app-configuration-android)
 9. [Part 9: GitHub Repository Tracking](#part-9--github-repository-tracking)
-10. [Part 10: Deploy Dashboard to Render](#part-10--deploy-dashboard-to-render)
-11. [Part 11: Troubleshooting Technical Matrix](#part-11--troubleshooting-technical-matrix)
+10. [Part 10: Run with Docker](#part-10--run-with-docker)
+11. [Part 11: Deploy Dashboard to Render](#part-11--deploy-dashboard-to-render)
+12. [Part 12: Troubleshooting](#part-12--troubleshooting)
 
 ---
 
-## PART 1 — External Accounts Setup
-> ⚠️ **Important:** Complete this section on your computer before configuring the Raspberry Pi. You will need API credentials from four services.
+# PART 1 — External Accounts Setup
 
-### 1.1 Blynk Setup
-1. **Account Creation:** Sign up for a free account at [blynk.io](https://blynk.io).
-2. **Create Template:** Navigate to **Developer Zone** → **My Templates** → **+ New Template**.
-   * **Name:** `IoT Detector`
-   * **Hardware:** `Raspberry Pi`
-   * **Connection Type:** `WiFi`
-3. **Configure Datastreams:** Under the **Datastreams** tab, click **+ New Datastream** → **Virtual Pin** for each entry below:
+> ⚠️ Complete this section on your computer before configuring the Raspberry Pi.
 
+You will need credentials from several external services.
 
-| Virtual Pin | Name | Data Type | Min | Max |
-| :--- | :--- | :--- | :--- | :--- |
+---
+
+## 1.1 Blynk Setup
+
+1. Create an account at `https://blynk.io`
+2. Go to:
+   - **Developer Zone**
+   - **My Templates**
+   - **+ New Template**
+
+Configure:
+
+| Setting | Value |
+|---|---|
+| Name | `IoT Detector` |
+| Hardware | `Raspberry Pi` |
+| Connection Type | `WiFi` |
+
+### Create Datastreams
+
+Under **Datastreams** → **+ New Datastream** → **Virtual Pin**
+
+| Virtual Pin | Name | Type | Min | Max |
+|---|---|---|---|---|
 | `V0` | System Status | String | — | — |
 | `V1` | Human Count | Integer | `0` | `1000` |
 | `V2` | Dog Count | Integer | `0` | `1000` |
@@ -304,75 +322,165 @@ This guide walks you through setting up the external accounts, hardware configur
 | `V4` | Temperature | Double | `-20` | `80` |
 | `V5` | Humidity | Double | `0` | `100` |
 
-4. **Configure Events:** Under the **Events & Notifications** tab, click **Edit** → **+ Create Event**:
-   * **Event 1:**
-     * **Type:** Custom Event
-     * **Name:** `Dog Detected`
-     * **Event Code:** `dog_detected` *(Must be exactly lowercase with underscore)*
-     * **Notifications Tab:** Enable push notifications. Set limit to **once per minute**.
-   * **Event 2:**
-     * **Type:** Custom Event
-     * **Name:** `Human Detected`
-     * **Event Code:** `human_detected` *(Must be exactly lowercase with underscore)*
-     * **Notifications Tab:** Enable push notifications.
-5. **Create Automation:**
-   * Go to **Automations** → **+ New Automation**.
-   * **Trigger:** Event → Select `dog_detected`.
-   * **Action:** Send email → Enter your email address.
-   * Repeat the process for `human_detected` if desired.
-6. **Design Web Dashboard:** Go to the **Web Dashboard** tab → **Edit** and add the following widgets:
+### Configure Events
 
+Under **Events & Notifications** → **+ Create Event**
 
-| Widget Type | Datastream | Purpose |
-| :--- | :--- | :--- |
-| **Label** | `V0` | System Status |
-| **Gauge** | `V1` | Human Count |
-| **Gauge** | `V2` | Dog Count |
-| **Label** | `V3` | Last Detected |
-| **Gauge / SuperChart** | `V4` | Temperature |
-| **Gauge / SuperChart** | `V5` | Humidity |
+#### Event 1
 
-7. **Deploy Device:** Go to **Devices** → **+ New Device** → **From Template** → Select `IoT Detector` → Click **Create**.
-8. **Extract Auth Token:** On your new device page, click the **Developer Tools** icon (`</>`) and copy the **Auth Token**. This string will be assigned to `BLYNK_AUTH_TOKEN` inside your `.env` file.
+| Setting | Value |
+|---|---|
+| Name | `Dog Detected` |
+| Event Code | `dog_detected` |
+| Push Notifications | Enabled |
+| Limit | Once per minute |
 
-### 1.2 Cloudinary Setup
-1. Register for a free account at [cloudinary.com](https://cloudinary.com).
-2. Log in and navigate to your **Dashboard**.
-3. Under **Account Details**, copy the following environment strings:
-   * **Cloud Name** \(\rightarrow\) `CLOUDINARY_CLOUD_NAME`
-   * **API Key** \(\rightarrow\) `CLOUDINARY_API_KEY`
-   * **API Secret** \(\rightarrow\) `CLOUDINARY_API_SECRET` *(Click to reveal)*
-4. *Note: No backend folder setup is required. The `iot-detector` directory is initialized automatically during the first asset payload transfer.*
+#### Event 2
 
-### 1.3 HiveMQ Setup
-No account registration is required. The system leverages the open-access public endpoint `broker.hivemq.com`. Your data strings remain sandboxed via your unique identifier configuration (`MQTT_USER_ID={USERID}`) mapped inside the local `.env` profile.
+| Setting | Value |
+|---|---|
+| Name | `Human Detected` |
+| Event Code | `human_detected` |
+| Push Notifications | Enabled |
 
-### 1.4 GitHub Setup
-Ensure your active repository profile contains a robust system filter rule to ensure production credential blocks are never cached or exposed upstream. Ensure `.env` is listed inside your local `.gitignore` rule table before executing upstream commits.
+> ⚠️ Event codes are case-sensitive and must match exactly.
 
-### 1.5 Render Setup
-1. Create a platform profile at [render.com](https://render.com) using your active GitHub OAuth profile authorization.
-2. *Note: Defer deployment build configurations until application execution has been fully verified locally on the hardware target.*
+### Configure Dashboard
 
----
+Add these widgets to the Blynk Web Dashboard:
 
-## PART 2 — Raspberry Pi Hardware
+| Widget | Datastream |
+|---|---|
+| Label | `V0` |
+| Gauge | `V1` |
+| Gauge | `V2` |
+| Label | `V3` |
+| Gauge / SuperChart | `V4` |
+| Gauge / SuperChart | `V5` |
 
-### Hardware Interconnect Assembly
-1. **Pi Camera:** Insert the structural ribbon data cable directly into the CSI port assembly interface. **Orientation:** The blue insulated strip must face directly toward the USB terminal block array.
-2. **Sense HAT:** Align and securely mate the hardware HAT onto the 40-pin GPIO array header block. Press downward firmly and uniformly to avoid bending connection pins.
+### Create Device
+
+1. Go to **Devices**
+2. Click **+ New Device**
+3. Choose **From Template**
+4. Select `IoT Detector`
+
+Copy the **Auth Token** from **Developer Tools** (`</>`).
+
+Add it to `.env`:
+
+```env
+BLYNK_AUTH_TOKEN=your_token_here
+```
 
 ---
 
-## PART 3 — Pi Software Setup
+## 1.2 Cloudinary Setup
 
-### 3.1 Update System Repositories
-Ensure system base packages are upgraded to runtime parity levels:
+1. Register at `https://cloudinary.com`
+2. Open the dashboard
+3. Copy:
+
+| Cloudinary Value | .env Variable |
+|---|---|
+| Cloud Name | `CLOUDINARY_CLOUD_NAME` |
+| API Key | `CLOUDINARY_API_KEY` |
+| API Secret | `CLOUDINARY_API_SECRET` |
+
+No folder setup is required.
+
+---
+
+## 1.3 MongoDB Atlas Setup
+
+MongoDB Atlas acts as a cloud mirror of the local SQLite database.
+
+1. Create a free account at `https://cloud.mongodb.com`
+2. Create an `M0 Free` cluster
+3. Create a database user
+4. Allow network access (`0.0.0.0/0` for development)
+5. Copy the Python connection string
+
+Example:
+
+```text
+mongodb+srv://username:password@cluster.mongodb.net/
+```
+
+Add to `.env`:
+
+```env
+MONGO_URI=your_connection_string
+```
+
+The database and collection are created automatically.
+
+> ℹ️ Leave `MONGO_URI` blank to disable MongoDB support.
+
+---
+
+## 1.4 HiveMQ Setup
+
+No account is required.
+
+The system uses:
+
+```text
+broker.hivemq.com
+```
+
+Set a unique MQTT user ID in `.env`:
+
+```env
+MQTT_USER_ID=your_unique_id
+```
+
+---
+
+## 1.5 GitHub Setup
+
+Ensure `.env` is included in `.gitignore` before pushing code.
+
+---
+
+## 1.6 Render Setup
+
+1. Create an account at `https://render.com`
+2. Sign in with GitHub
+3. Complete deployment later in Part 11
+
+---
+
+# PART 2 — Raspberry Pi Hardware
+
+## Hardware Assembly
+
+### Pi Camera
+
+- Connect the ribbon cable to the CSI port
+- Blue side faces the USB ports
+- Lock the connector latch firmly
+
+### SenseHAT
+
+- Align with GPIO pins
+- Press down evenly
+- Do not force the connection
+
+---
+
+# PART 3 — Pi Software Setup
+
+## 3.1 Update System Packages
+
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 3.2 Install Core Native Dependencies
+---
+
+## 3.2 Install System Dependencies
+
 ```bash
 sudo apt install -y \
     python3-picamera2 \
@@ -383,65 +491,66 @@ sudo apt install -y \
     libgl1 \
     libglib2.0-0
 ```
-*Note: Installing `mosquitto-clients` exposes target endpoints `mosquitto_sub` and `mosquitto_pub` directly to your interactive shell for pipeline tracing operations.*
 
-### 3.3 Set Up Git and SSH Key Authentication
-Configure your global environment identification properties:
+---
+
+## 3.3 Configure Git + SSH
+
+### Set Git Identity
+
 ```bash
-git config --global user.name "{USERNAME}"
+git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
-Generate a secure ed25519 identity key signature pair:
+### Generate SSH Key
+
 ```bash
 ssh-keygen -t ed25519 -C "your.email@example.com"
-# Press [Enter] to bypass passphrase security prompts
 ```
 
-Output the newly generated public authentication token configuration block to screen:
+### Copy Public Key
+
 ```bash
 cat ~/.ssh/id_ed25519.pub
 ```
 
-* **Action Item:** Copy the terminal output profile chunk, navigate to **GitHub** \(\rightarrow\) **Settings** \(\rightarrow\) **SSH and GPG Keys** \(\rightarrow\) **New SSH Key**, and paste the key.
+Add it to:
 
-Verify target transport path access layer clearance to upstream hosts:
+- GitHub
+- Settings
+- SSH and GPG Keys
+
+### Verify
+
 ```bash
 ssh -T git@github.com
-# Success output string: "Hi {USERNAME}! You've successfully authenticated..."
 ```
 
 ---
 
-## PART 4 — Project Setup on the Pi
+# PART 4 — Project Setup on the Pi
 
-### 4.1 Clone Application Workspace
+## 4.1 Clone Repository
+
 ```bash
 cd ~
-git clone git@github.com:{USERNAME}/{REPO}.git
+git clone git@github.com:YOUR_USERNAME/Networks-IOT-Assignment.git
 cd Networks-IOT-Assignment
 ```
 
-If the tracking repository context maps to an empty layout tree node structure, build the architecture framework locally manually:
-```bash
-cd ~
-mkdir Networks-IOT-Assignment && cd Networks-IOT-Assignment
-git init
-git branch -M main
-git remote add origin git@github.com:{USERNAME}/{REPO}.git
-```
+---
 
-### 4.2 Initialize System Workspace Trees
+## 4.2 Create Directories
+
 ```bash
 mkdir -p app/templates models images logs
 ```
 
-### 4.3 Workspace Directory Tree Standard
-Verify that your target workspace accurately reflects the project structure shown earlier in the README.
+---
 
+## 4.3 Configure `.gitignore`
 
-### 4.4 Set Up Version Control Exclusions
-Generate a configuration workspace exclusion track manifest file using your shell terminal:
 ```bash
 cat > .gitignore << 'EOF'
 .env
@@ -457,85 +566,105 @@ models/yolov8n.pt
 EOF
 ```
 
-### 4.5 Set Up Local Environment Configurations
+---
+
+## 4.4 Configure Environment Variables
+
 ```bash
+cp .env.example .env
 nano .env
 ```
 
-Paste your local configurations into the file editor.
+Fill in credentials for:
 
-*To exit Nano: Press `Ctrl+O` $\rightarrow$ `Enter` to commit, then `Ctrl+X` to close the editor.*
+- Blynk
+- MQTT
+- Cloudinary
+- MongoDB Atlas
 
-### 4.6 Compile and Deploy ONNX Object Inference Graph
-To optimize computational footprints on resource-constrained Pi architectures, compile your network weights model target arrays on your laptop workspace environment host:
+---
+
+## 4.5 Export YOLOv8 ONNX Model
+
+Run on your laptop:
 
 ```bash
-# Execute these commands locally on your laptop workspace machine terminal
 pip install ultralytics
+```
+
+```bash
 python -c "
 from ultralytics import YOLO
 model = YOLO('yolov8n.pt')
 model.export(format='onnx')
-print('Done — yolov8n.onnx created')
 "
 ```
 
-Deploy the compiled network asset model tracking module directly over the local network interface structure to the Raspberry Pi:
+Copy to Pi:
+
 ```bash
-# Execute on your laptop terminal (modify identifier targets to map your network)
 scp yolov8n.onnx pi@YOUR_PI_IP:~/Networks-IOT-Assignment/models/
 ```
 
-Confirm that the model file reached the target destination directory safely:
-```bash
-ls -lh ~/Networks-IOT-Assignment/models/
-```
-
-### 4.7 Initialize Virtual Environment Sandbox Context
-```bash
-cd ~/Networks-IOT-Assignment
-python -m venv .venv --system-site-packages
-source .venv/bin/activate
-```
-*Verification standard: The active shell prompt sequence must now clearly display an active `(.venv)` indicator prefix.*
-
-### 4.8 Install Python Package Dependencies
-Install packages sequentially to prevent deep-dependency conflicts with core system modules:
+Verify:
 
 ```bash
-# Step 1: Install core package dependencies
-pip install -r requirements.txt 
-
-# Step 2: Install targeted Blynk networking engine components
-pip install https://bit.ly/3C0PMVY
-
-# Step 3: Clear transient storage cache spaces to free disk drive overhead
-pip cache purge
-```
-
-Execute an environment verification sweep across core framework runtime packages:
-```bash
-python -c "import onnxruntime; print('ONNX OK')"
-python -c "import cv2; print('OpenCV OK')"
-python -c "import BlynkLib; print('Blynk OK')"
-python -c "import paho.mqtt.client; print('MQTT OK')"
-python -c "import flask; print('Flask OK')"
-python -c "import cloudinary; print('Cloudinary OK')"
-python -c "from picamera2 import Picamera2; print('Camera OK')"
-python -c "from sense_hat import SenseHat; print('SenseHAT OK')"
+ls -lh models/
 ```
 
 ---
 
-## PART 5 — Test Each Component Individually
-> ⚠️ **Prerequisite Execution Rule:** Always ensure that any unit level diagnostics or executable targets run strictly from the repository workspace core directory with the virtual environment layer active.
+## 4.6 Create Virtual Environment
+
+```bash
+python -m venv .venv --system-site-packages
+source .venv/bin/activate
+```
+
+---
+
+## 4.7 Install Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Install Blynk separately:
+
+```bash
+pip install https://bit.ly/3C0PMVY
+```
+
+Clear cache:
+
+```bash
+pip cache purge
+```
+
+### Verify Installations
+
+```bash
+python -c "import onnxruntime"
+python -c "import cv2"
+python -c "import flask"
+python -c "import cloudinary"
+python -c "import pymongo"
+python -c "import BlynkLib"
+```
+
+---
+
+# PART 5 — Individual Component Testing
+
+> ⚠️ Always run from the repository root with the virtual environment active.
 
 ```bash
 cd ~/Networks-IOT-Assignment
 source .venv/bin/activate
 ```
-### 5.1 Test the Pi Camera
-Verify that the camera hardware initializes correctly and can capture a still frame to disk:
+
+## 5.1 Test Pi Camera
+
 ```bash
 python -c "
 from picamera2 import Picamera2
@@ -546,323 +675,378 @@ cam.start()
 time.sleep(2)
 cam.capture_file('test_capture.jpg')
 cam.stop()
-print('Camera OK — test_capture.jpg created')
+print('Camera OK')
 "
-ls -lh test_capture.jpg
 ```
 
-### 5.2 Test the Sense HAT
-Verify communication with the Sense HAT sensors and confirm the RGB LED matrix illuminates:
+## 5.2 Test SenseHAT
+
 ```bash
 python -c "
 from sense_hat import SenseHat
-import time
 sense = SenseHat()
-print('Temp:', round(sense.get_temperature(), 2))
-print('Humidity:', round(sense.get_humidity(), 2))
-print('Pressure:', round(sense.get_pressure(), 2))
-sense.clear(0, 255, 0)
-time.sleep(2)
-sense.clear()
-print('SenseHAT OK — LEDs should have flashed green')
+print(sense.get_temperature())
+print(sense.get_humidity())
+print(sense.get_pressure())
 "
 ```
 
-### 5.3 Test env_data_service Standalone
-Isolate and verify temperature, humidity, and atmospheric pressure:
-```bash
-python app/env_data_service.py
-```
-*Verification standard: The terminal must return real-time looping temperature, humidity, and atmospheric pressure data logs.*
+## 5.3 Test Environmental Data Service
 
-### 5.4 Test ONNX Detection
-Verify that `onnxruntime` can parse the local compiled graph structure and complete a model inference evaluation pass:
 ```bash
-python -c "
-import sys
-sys.path.insert(0, 'app')
-from detector_service import DetectorService
+PYTHONPATH=. python app/env_data_service.py
+```
+
+## 5.4 Test YOLO Detection
+
+```bash
+PYTHONPATH=. python -c "
+from app.detector_service import DetectorService
 d = DetectorService()
-results = d.detect('test_capture.jpg')
-print('Detection OK — results:', results)
+print(d.detect('test_capture.jpg'))
 "
 ```
 
-### 5.5 Test MQTT Architecture
-Validate real-time pub/sub message transit capabilities by spawning two separate concurrent shell sessions:
+## 5.5 Test MQTT
 
-* **Terminal 1 (Listener Client):**
-  ```bash
-  mosquitto_sub -h broker.hivemq.com -t "/userid/#" -v
-  ```
-* **Terminal 2 (Publisher Client):**
-  ```bash
-  mosquitto_pub -h broker.hivemq.com \
-    -t "/userid/events" \
-    -m '{"event":"test","label":"dog","confidence":0.9}'
-  ```
+### Terminal 1
 
-*Verification standard: The JSON string submitted in Terminal 2 must instantaneously mirror inside the listener feed array of Terminal 1.*
-
-### 5.6 Test Blynk Cloud Telemetry
-Verify network route connectivity to the Blynk SaaS ingestion endpoints by updating virtual pin properties manually:
 ```bash
-python -c "
-import sys
-sys.path.insert(0, 'app')
-import os
-os.chdir('$(pwd)')
+mosquitto_sub -h broker.hivemq.com -t "/YOUR_MQTT_USER_ID/#" -v
+```
+
+### Terminal 2
+
+```bash
+mosquitto_pub -h broker.hivemq.com \
+  -t "/YOUR_MQTT_USER_ID/events" \
+  -m '{"event":"test"}'
+```
+
+## 5.6 Test Blynk
+
+```bash
+PYTHONPATH=. python -c "
 from dotenv import load_dotenv
 load_dotenv()
-import BlynkLib, time
-token = os.getenv('BLYNK_AUTH_TOKEN')
-blynk = BlynkLib.Blynk(token)
-print('Connecting to Blynk...')
+import os, BlynkLib, time
+blynk = BlynkLib.Blynk(os.getenv('BLYNK_AUTH_TOKEN'))
 for i in range(30):
     blynk.run()
     time.sleep(0.1)
 blynk.virtual_write(0, 'TEST OK')
-for i in range(10):
-    blynk.run()
-    time.sleep(0.1)
-print('Done — check V0 on your Blynk dashboard')
 "
 ```
-*Verification standard: Open your Remote Cloud Web Panel. The System Status indicator box mapped to `V0` must now read `TEST OK`.*
 
-### 5.7 Test Cloudinary API Asset Engine
-Verify authenticated payload uploads to your cloud-hosted object storage workspace:
+## 5.7 Test Cloudinary
+
 ```bash
-python -c "
-import sys
-sys.path.insert(0, 'app')
+PYTHONPATH=. python -c "
 from dotenv import load_dotenv
 load_dotenv()
-from cloudinary_service import CloudinaryService
+from app.cloudinary_service import CloudinaryService
 cloud = CloudinaryService()
-url = cloud.upload('test_capture.jpg')
-print('Cloudinary OK — URL:', url)
+print(cloud.upload('test_capture.jpg'))
 "
 ```
-*Verification standard: Copy the resulting URL string output and load it inside any external browser interface to check the image delivery.*
 
-### 5.8 Test Flask Dashboard Engine
-Test localized web layout compilation threads and operational endpoints:
+## 5.8 Test MongoDB Atlas
+
 ```bash
-python app/dashboard.py &
-sleep 2
-curl http://localhost:5000/api/counts
-curl http://localhost:5000/api/environment
+PYTHONPATH=. python -c "
+from dotenv import load_dotenv
+load_dotenv()
+from app.mongo_service import MongoService
+mongo = MongoService()
+print(mongo.is_enabled())
+"
 ```
-Open a browser page on your local home network targeting `http://YOUR_PI_IP:5000`. Once validated, terminate the background test process:
+
+## 5.9 Test Flask Dashboard
+
 ```bash
-kill %1
+PYTHONPATH=. python app/dashboard.py
+```
+
+Open:
+
+```text
+http://YOUR_PI_IP:5000
 ```
 
 ---
 
-## PART 6 — Running the Full System
+# PART 6 — Running the Full System
 
-> ⚠️ **Prerequisite Execution Rule:** Always confirm your virtual environment layers are activated before spinning up application execution cycles.
+## 6.1 Start Detection Loop
 
 ```bash
-cd ~/Networks-IOT-Assignment
-source .venv/bin/activate
+PYTHONPATH=. python app/main.py
 ```
 
-### 6.1 Run the Core System Loop
-Execute the main engine initialization thread from your primary workspace console window:
-```bash
-python app/main.py
-```
+Expected:
+
 ```text
 [INFO] IoT Pet & Human Detection System — starting up
-[INFO] SenseHAT LED matrix initialised (blue = starting up)
-[INFO] Pi Camera started, warming up…
-[INFO] Camera ready.
-[INFO] Database ready: detections.db
-[INFO] Blynk background thread started.
-[INFO] MQTT connected to broker.hivemq.com:1883
-[INFO] Cloudinary image upload enabled.
-[INFO] Loading ONNX model from: .../models/yolov8n.onnx
-[INFO] ONNX model loaded.
-[INFO] All services ready. Entering detection loop.
+[INFO] MQTT connected
+[INFO] Cloudinary enabled
+[INFO] Monitoring for motion...
 ```
-*Note: The hardware Sense HAT matrix elements will transition through a brief blue startup indication state before locking hard into steady green standby mode.*
 
-### 6.2 Spin Up the Web Dashboard
-Execute the interface server app concurrently inside an independent shell terminal window:
-```bash
-python app/dashboard.py
-```
-Target browser system view: `http://YOUR_PI_IP:5000`
+SenseHAT LEDs:
+
+- Blue → Startup
+- Green → Monitoring
+- Red → Detection
 
 ---
 
-## PART 7 — End-to-End Verification Checklist
+## 6.2 Start Dashboard
 
-Ensure that the following interactions occur seamlessly while `main.py` runs actively:
-
-* **Physical LED Matrix Behavior:**
-  * Displays Solid Blue during internal sub-system boots.
-  * Transitions to Solid Green when entering standard scanning cycles.
-  * Pulses High-Intensity Red for approximately 2 seconds when targeting a valid target class configuration match, then cycles back to Green.
-* **Blynk Workspace Matrix Tracking:**
-  * Virtual element `V0` displays status flag text reading `SYSTEM ONLINE`.
-  * Virtual elements `V4` & `V5` register ambient environment tracking sweeps.
-  * Passing in front of the lens triggers a step increase inside counter `V1`, changes the last detection state string on `V3` to `Human`, and updates system tracking label `V0` to display `HUMAN DETECTED`.
-* **MQTT Channel Verification Sweep:**
-  ```bash
-  mosquitto_sub -h broker.hivemq.com -t "/{YOUR_MQTT_USER_ID}/#" -v
-  ```
-  * Confirm `/{user}/status` maintains an online ping.
-  * Confirm `/{user}/events` pushes structured JSON on event triggers.
-  * Confirm `/{user}/telemetry/environment` delivers telemetry feeds continuously.
-* **SQLite Relational Verification:**
-  ```bash
-  sqlite3 detections.db "SELECT id, timestamp, label, confidence, blynk_notified, mqtt_published FROM detections ORDER BY id DESC LIMIT 5;"
-  ```
-* **Cloud Storage File Ingestion:** 
-  Review your media library on [cloudinary.com](https://cloudinary.com) inside the target directory path container `/iot-detector` to verify that real-time capture images are matching local detections.
-* **Web Dashboard Integrity Checks:** Run localized environment structural parsing validation sweeps via terminal tool parameters:
-  ```bash
-  curl http://localhost:5000/api/environment
-  curl http://localhost:5000/api/counts
-  ```
-
----
-
-## PART 8 — Blynk Mobile App Configuration (Android)
-
-1. Download and install the official **Blynk IoT** package tool through the Google Play Store environment.
-2. Sign in with your developer profile account settings.
-3. Open your automatically linked `IoT Detector` tile node, select the configuration tool layout view (wrench element icon), and structure your panel layout elements with the matching mapping parameter matrix settings below:
-
-
-| Mobile Widget Type | Linked Datastream Pin | Custom Target Label |
-| :--- | :--- | :--- |
-| **Labeled Value** | `V0` | Status |
-| **Labeled Value** | `V1` | Humans |
-| **Labeled Value** | `V2` | Dogs |
-| **Labeled Value** | `V3` | Last Detected |
-| **Gauge** | `V4` | Temperature |
-| **Gauge** | `V5` | Humidity |
-
-4. Exit out of the design view mode layer parameters interface.
-5. **Enable Push Notifications:** Ensure both Android OS app permissions and internal Blynk workspace profile notifications toggle paths are active.
-6. **Live Verification:** Run an interaction cycle by presenting a target image profile to the device camera lens array to trigger a push alert delivery payload on the mobile handset.
-
----
-
-## PART 9 — GitHub Repository Tracking
-
-Before committing any project changes to your upstream workspace, verify your version control block exclusion rule logic:
 ```bash
-cd ~/Networks-IOT-Assignment
-source .venv/bin/activate
-
-cat .gitignore | grep .env
-# Required output response echo verification string match: .env
+PYTHONPATH=. python app/dashboard.py
 ```
 
+Open:
+
+```text
+http://YOUR_PI_IP:5000
+```
+
+---
+
+# PART 7 — End-to-End Verification Checklist
+
+## Verify:
+
+### SenseHAT
+
+- Blue on startup
+- Green when idle
+- Red on detection
+
+### Blynk
+
+- Counters increment
+- Status updates
+- Push notifications arrive
+
+### MQTT
+
+- `/events` receives JSON
+- `/telemetry/environment` receives sensor data
+
+### SQLite
+
+- Detection rows appear
+
+### MongoDB Atlas
+
+- Cloud detections appear
+
+### Cloudinary
+
+- Annotated dog images upload successfully
+
+### Dashboard
+
+- Detection history visible
+- API endpoints return valid JSON
+
+---
+
+# PART 8 — Blynk Mobile App Configuration (Android)
+
+Install:
+
+- **Blynk IoT** from Google Play Store
+
+Add widgets:
+
+| Widget | Datastream |
+|---|---|
+| Labeled Value | `V0` |
+| Labeled Value | `V1` |
+| Labeled Value | `V2` |
+| Labeled Value | `V3` |
+| Gauge | `V4` |
+| Gauge | `V5` |
+
+Enable push notifications in:
+
+- Android settings
+- Blynk app settings
+
+---
+
+# PART 9 — GitHub Repository Tracking
+
+Verify `.env` is ignored:
+
 ```bash
-git add .
 git status
-# ⚠️ CAUTION VERIFICATION STEP: Confirm '.env' isn't present within your staged changes list.
-
-git commit -m "Initial project — IoT pet and human detection system"
-git push -u origin main
 ```
 
-For general maintenance code drops moving forward across downstream production revisions, run:
+Commit:
+
 ```bash
 git add .
-git commit -m "Provide a brief description of the structural changes implemented"
+git commit -m "Initial project"
 git push
 ```
 
 ---
 
-## PART 10 — Deploy Dashboard to Render
+# PART 10 — Run with Docker
 
-1. Open your management panel interface on [render.com](https://render.com) and authenticate through your GitHub profile handle link.
-2. Choose **+ New** $\rightarrow$ **Web Service**, then authorize and link your `Networks-IOT-Assignment` tracking repository path.
-3. Apply the system runtime configurations precisely as detailed below:
+> ⚠️ Complete manual setup/testing before using Docker.
 
+## 10.1 Configure Database Path
 
-| Configuration Property Block | Designated Value Settings Target |
-| :--- | :--- |
-| **Name** | `iot-detector-dashboard` |
-| **Language** | `Python 3` |
-| **Branch** | `main` |
-| **Root Directory** | *(Leave entirely blank)* |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn app.dashboard:app` |
-| **Region** | `Frankfurt (EU Central)` |
-| **Plan** | `Free` |
+Update `.env`:
 
-4. Transcribe your local environment parameter attributes from your private `.env` setup blocks into the Render configuration settings:
-   * `MQTT_USER_ID`
-   * `CLOUDINARY_CLOUD_NAME`
-   * `CLOUDINARY_API_KEY`
-   * `CLOUDINARY_API_SECRET`
-   * `FLASK_DEBUG` = `false`
-   * `DB_PATH` = `detections.db`
-5. Click **Deploy Web Service**. The platform will return your public URL stream endpoint string pattern upon building successfully (e.g., `https://iot-detector-dashboard.onrender.com`).
+```env
+DB_PATH=/app/data/detections.db
+```
 
-> ℹ️ **Technical Constraint Architecture Warning:** Render's base tier leverages non-persistent ephemeral storage layers. The local database file instance (`detections.db`) is completely initialized back to zero states during platform recycle loops. The cloud layout correctly prints operational data elements during local execution sequences tracking from the target hardware, but remains empty on the web mirror unless bound directly to an external managed cloud database engine. *This limitation is fully documented and satisfies assignment scope criteria.*
+Create volume directory:
 
----
+```bash
+mkdir -p data
+```
 
-## PART 11 — Troubleshooting Technical Matrix
-
-* **Camera Hardware Ingestion Failures (`No cameras available`):**
-  ```bash
-  libcamera-hello --list-cameras
-  ```
-  *Solution:* Power down your system, verify the ribbon cable alignment inside the CSI slot latch, boot back up, and confirm the interface options setup using the configuration parameters utility (`sudo raspi-config`).
-* **Sense HAT Python Namespace Import Errors:**
-  ```bash
-  python -c "from sense_hat import SenseHat; print('OK')"
-  ```
-  *Solution:* Confirm your virtual environment setup includes full access rights to system level shared dependencies (`--system-site-packages`). If issues continue to manifest across standard tracks, run `sudo apt install sense-hat`, remove your corrupted directory sandbox container entirely, and run a fresh installation process from scratch.
-* **ONNX Engine Runtime Graph Load Failures:**
-  ```bash
-  ls -lh models/yolov8n.onnx
-  ```
-  *Solution:* Confirm your object model compilation file sizing registers close to ~12MB. If missing or corrupt, re-export the ONNX matrix elements through your local laptop setup environment using python commands and re-run your terminal network file copy transmission parameters (`scp`).
-* **BlynkLib Networking Connection Routing Faults:**
-  ```bash
-  grep BLYNK_AUTH_TOKEN .env
-  ```
-  *Solution:* Verify that the alphanumeric string configuration record matches exactly, contains no trailing character space elements, and is assigned without any literal formatting quote structures inside your workspace profile document.
-* **Execution Module Resolution Paths Failure Errors (`ModuleNotFoundError`):**
-  ```bash
-  cd ~/Networks-IOT-Assignment
-  source .venv/bin/activate
-  python app/main.py
-  ```
-  *Solution:* Never call tracking scripts directly inside nested script folders (e.g., executing `python main.py` within `/app`). Always run commands targeting the core execution scripts from the workspace main layer directory paths.
-* **MQTT Remote Telemetry Message Loss Errors:**
-  Verify structural transport layer connectivity using basic ping diagnostic routines:
-  ```bash
-  ping broker.hivemq.com
-  ```
-  Keep an open terminal running active target trace listeners (`mosquitto_sub`) to capture and match message payload outputs in real-time while `main.py` processes active execution loops.
-* **Missing Blynk Cloud Application Push Alert Dispatches:**
-  * Confirm that custom system tracking code properties exactly match `dog_detected` and `human_detected` strings down to all casing and punctuation rules inside the remote administration desk.
-  * Verify notification rules logic configurations are set to active mode paths within the remote dashboard parameters console layout.
-  * Review system app configuration profiles on your mobile phone to verify your operating system permissions aren't blocking alert delivery channels. Confirm that your developers account traffic does not exceed free-tier capacity limitations.
-
-
-## PART 12 —  Run with Docker
+## 10.2 Build + Start
 
 ```bash
 docker compose build
 docker compose up
-# Detection loop + dashboard start together.
-# Dashboard available at http://YOUR_PI_IP:5000
 ```
+
+Background mode:
+
+```bash
+docker compose up -d
+```
+
+## 10.3 Useful Commands
+
+```bash
+docker compose logs -f
+docker compose down
+docker compose restart
+```
+
+---
+
+# PART 11 — Deploy Dashboard to Render
+
+> ⚠️ MongoDB Atlas must be configured before deployment.
+
+## 11.1 Create Web Service
+
+Go to:
+
+```text
+https://render.com
+```
+
+Create a new Web Service connected to GitHub.
+
+## 11.2 Render Settings
+
+| Setting | Value |
+|---|---|
+| Name | `iot-detector-dashboard` |
+| Runtime | Python |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn --workers 1 --threads 4 --bind 0.0.0.0:5000 app.dashboard:app` |
+
+## 11.3 Environment Variables
+
+```env
+MONGO_URI=
+MQTT_USER_ID=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+## 11.4 Deploy
+
+Click:
+
+```text
+Deploy Web Service
+```
+
+Render provides a public dashboard URL.
+
+---
+
+# PART 12 — Troubleshooting
+
+## Camera Not Detected
+
+```bash
+libcamera-hello --list-cameras
+```
+
+Check:
+
+- Ribbon cable orientation
+- Camera enabled in `raspi-config`
+
+## SenseHAT Import Error
+
+```bash
+python -c "from sense_hat import SenseHat"
+```
+
+Recreate virtual environment with:
+
+```bash
+python -m venv .venv --system-site-packages
+```
+
+## ONNX Model Missing
+
+```bash
+ls -lh models/yolov8n.onnx
+```
+
+Re-copy from laptop if missing.
+
+## Blynk Connection Failure
+
+```bash
+grep BLYNK_AUTH_TOKEN .env
+```
+
+Ensure token is correct.
+
+## MongoDB Connection Failure
+
+Check:
+
+- `MONGO_URI`
+- Atlas network access rules
+- Internet connectivity
+
+## MQTT Messages Missing
+
+```bash
+ping broker.hivemq.com
+```
+
+Verify topic subscriptions match `MQTT_USER_ID`.
+
+## Render Dashboard Empty
+
+Confirm:
+
+- `main.py` is running on the Pi
+- MongoDB Atlas contains detections
+- Render environment variables are correct
 
 ---
 
@@ -922,6 +1106,7 @@ docker compose up
 * [Flask Documentation: Streaming Patterns](https://flask.palletsprojects.com/en/stable/patterns/streaming/)
 * [Flask-CORS Extension Documentation](https://flask-cors.readthedocs.io/en/latest/)
 * [Gunicorn Architecture: Thread Configuration Guide](https://gunicorn.org/design/#how-many-threads)
+* [Dev.to: Why Python Web Apps Need WSGI and Gunicorn](https://dev.to/techwithhari/why-do-we-need-wsgi-for-python-web-apps-and-why-flask-uses-gunicorn-dm0)
 * [OWASP Foundation: Cross-Site Scripting (XSS) Mitigation](https://owasp.org/www-community/attacks/xss/)
 
 #### Python Core & Analytics
@@ -936,6 +1121,9 @@ docker compose up
 * [YouTube: OpenCV Tutorial](https://www.youtube.com/watch?v=P4Z8_qe2Cu0)
 * [YouTube: Docker Overview](https://www.youtube.com/watch?v=kTp5xUtcalw)
 * [YouTube: Docker Full Stack Implementation](https://www.youtube.com/watch?v=lEcULR30-GM)
+* [YouTube: Flask Server-Sent Events (SSE) Deep Dive](https://www.youtube.com/watch?v=X_DdIXrmWOo)
+* [YouTube: MongoDB Atlas Setup & Python Integration](https://www.youtube.com/watch?v=A_Z1lgZLSNc)
+* [YouTube: JavaScript SSE Client Implementation](https://www.youtube.com/watch?v=6zmI_BU18xk)
 
 
 ---
