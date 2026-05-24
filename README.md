@@ -218,46 +218,75 @@ smart-iot-detector/
 
 ## Design Decisions & Reflection
 
-### Why BlynkLib?
-BlynkLib uses a persistent socket connection and provides `blynk.run()`, `blynk.virtual_write()`, and `blynk.log_event()`. Running `blynk.run()` in a dedicated background thread prevents it from blocking the camera capture loop. It also has a high quality web app and mobile app that makes it easy to set up and monitor your IOT devices.
+### Why BlynkLib over the Blynk HTTP API?
+BlynkLib uses a persistent socket connection rather than individual HTTP requests. This means the connection stays open continuously in a background thread, and `blynk.virtual_write()` pushes data to the dashboard instantly rather than waiting for a polling cycle. Running `blynk.run()` in a dedicated daemon thread (using Python's `threading.Thread`) prevents it from blocking the main motion detection loop — the camera never pauses waiting for a network call. The Blynk platform also provides a polished web dashboard and mobile app that make it straightforward to monitor the system remotely without building a custom frontend from scratch.
 
 ### Why HiveMQ + paho-mqtt?
-HiveMQ is the broker used because test.mosquitto.org wasn't working when I started this assignment. paho-mqtt is the standard Python MQTT client. MQTT alongside Blynk provides a second communication channel, demonstrating multiple IoT protocols.
+HiveMQ's public broker (`broker.hivemq.com`) was chosen because `test.mosquitto.org` wasn't working when I started the assignment. paho-mqtt is the standard Python MQTT client and was used directly in the module labs. MQTT adds a second independent communication channel alongside Blynk, demonstrating multiple IoT protocols running concurrently. The implementation includes a Last Will and Testament (LWT) message so the broker automatically publishes `offline` to the status topic if the Pi disconnects unexpectedly. Topics are namespaced under a unique `MQTT_USER_ID` to avoid collisions on the shared public broker. QoS 1 (at least once) is used for detection events (guaranteed delivery) and QoS 0 (at most once) for environmental telemetry (best effort, acceptable to lose occasional readings).
+
+### Why motion-gated detection?
+Running YOLO inference on every camera frame would push the Pi's CPU to 100% continuously, causing thermal throttling and degraded performance across all services. The motion gate means YOLO only runs when something has actually moved. OpenCV's absolute difference method was chosen over MOG2 background subtraction because MOG2 continuously adapts its background model, which requires more compute power and increases the chances of the CPU overheating. MOG2' continuous learning can also cause it to gradually "learn" a slow-moving pet as part of the background and stop detecting it. Absolute difference against a fixed reference frame is deterministic, lightweight, and easier to tune for indoor conditions.
+
+### Why two camera configurations (preview + still)?
+A single camera configuration optimised for speed produces poor quality still images — video frames sacrifice resolution and exposure quality for throughput. A 640×480 grayscale stream is sufficient for OpenCV contour analysis (motion detection does not need colour or high resolution), but the image sent to YOLO for inference, saved to disk, and uploaded to Cloudinary should be the best quality the camera can produce. Picamera2's `switch_mode()` allows runtime switching between a low-resolution preview configuration and a high-resolution still configuration. The still mode is only used for the fraction of a second needed to capture the detection image, then the camera returns to preview mode.
+
+### Why ONNX Runtime over running PyTorch directly?
+PyTorch and the full Ultralytics package require approximately 426 MB of disk space, which is too large for the Raspberry Pi SD card alongside the operating system, other dependencies, and project files. The YOLOv8n model exported to ONNX format is approximately 12 MB. ONNX Runtime (`onnxruntime`) is a lightweight inference engine that runs the exported model directly without PyTorch installed. The model is exported once on a laptop and copied to the Pi. This is a standard edge deployment pattern where model training and inference happen on different hardware.
+
+### Why NMS post-processing in code rather than baked into the model export?
+Exporting YOLOv8 to ONNX without the built-in Non-Maximum Suppression (NMS) layer (the default export behaviour) gives full control over confidence thresholds at runtime via environment variables. This means thresholds can be tuned without re-exporting the model. Per-class NMS is applied separately for dog and person detections so a high-confidence person box cannot suppress a nearby dog box — which would happen if NMS were applied globally across all classes.
 
 ### Why SenseHAT environmental data?
-The SenseHAT enables us to publish temperature, humidity, and pressure alongside detection events provides a richer data stream and demonstrates combined knowledge across module topics.
+The SenseHAT is physically attached to the Raspberry Pi used in this project, making it a natural additional data source. Publishing temperature, humidity, and pressure alongside detection events produces a richer data stream — environmental context is logged with every detection and displayed in the Flask dashboard. It also demonstrates the physical IoT layer (sensor input) beyond just the camera, and allows the system to correlate detection activity with environmental conditions over time through the analytics charts.
 
-### Why SQLite?
-Zero configuration, single file, survives restarts when volume-mounted. Sufficient for home IoT event volumes. Also consumed by the Flask dashboard.
+### Why SQLite with WAL mode?
+SQLite requires zero configuration, produces a single portable file, and persists across restarts when volume-mounted in Docker. It is sufficient for the event volume a home IoT system generates. WAL (Write-Ahead Logging) mode is enabled via `PRAGMA journal_mode=WAL` so the Flask dashboard can read from the database at the same time as the detection loop writes to it, without locking conflicts. This is important because the dashboard and main detection loop run as separate processes that both access the same file.
 
-### Why Flask + Render?
-The week 9 lab builds a Flask API on the Pi, and the smart-doorbell lab deploys Flask to Render. Using the same pattern here provides a publicly accessible dashboard and applies two lab skills together.
+### Why MongoDB Atlas alongside SQLite?
+SQLite lives on the Pi's SD card and is not accessible remotely. MongoDB Atlas provides a free-tier cloud database that the Render-deployed dashboard can query directly. The dual-write pattern — SQLite first, then MongoDB as a mirror — means the Pi retains full offline resilience (SQLite always written first, MongoDB failure does not affect the pipeline) while also maintaining remote persistence. MongoDB's aggregation pipeline (`$dateTrunc`, `$group`, `$avg`) enables server-side analytics computation — rolling averages and hourly bucketing are computed in the database rather than by pulling raw rows into Python.
+
+### Why Flask + Server-Sent Events over WebSockets page refresh?
+The module labs build Flask APIs on the Pi and deploy them to Render, so Flask is a natural fit. Server-Sent Events (SSE) replace the original `<meta http-equiv="refresh" content="10">` pattern. SSE holds a single persistent HTTP connection per browser tab and the server pushes named events (`detection`, `environment`, `analytics`, `counts`, `timeseries`) whenever new data is available. This means the dashboard updates in under 2 seconds after a detection without reloading the page. This is a better user experience and avoids the visual flicker of a full reload. SSE was chosen over WebSockets because it is simpler (one-way server-to-client push is all that is needed) and works natively with Flask's streaming response support.
+
+### Why Render?
+The smart-doorbell lab deploys Flask to Render, so the pattern is already established. The free tier is sufficient for a dashboard with low traffic. When `MONGO_URI` is set, the Render deployment reads from MongoDB Atlas rather than a local SQLite file, which resolves the remote access limitation. Render's free tier has short-term storage, but this does not matter because the persistent data lives in Atlas.
 
 ### Why Docker?
-Docker ensures reproducible deployment regardless of host Python version. It also demonstrates containerisation as a self-learned Release 4 technology.
+Docker ensures the system can be deployed on the Pi without manually managing Python versions, virtual environments, or conflicting system packages. The same `docker compose up` command starts both the detection loop and the dashboard in isolated containers with all dependencies included. It also demonstrates containerisation as a self-learned technology beyond the module content. I used to sell Google Kubernetes Engine (GKE) as part of the Google Cloud Platform, and noticed from interactions with CIOs and CTOs that Docker containers and serverless represented trends business were moving towards. Thus, I wanted to learn Docker/containerisation technology. The implementation covers multi-service `docker-compose.yml` configuration, volume mounts for persistent data and hardware device access, privileged mode for libcamera and SenseHAT, and gunicorn as a production Web Server Gateway Interface (WGIS) server rather than Flask's development server.
 
 ### Why Cloudinary?
-Cloudinary is used to make Pi-captured images accessible from the internet. Detection photos are viewable in the Render dashboard and in MQTT payloads, not just stored locally.
+The Pi captures detection images to its local SD card, but those images are only accessible from the local network. Cloudinary uploads annotated dog detection images (with YOLO bounding boxes drawn) to a Cont Delivery Network (CDN) and returns a public HTTPS URL. This URL is stored in SQLite, mirrored to MongoDB, included in the MQTT event payload, and displayed as a clickable thumbnail in the Flask dashboard — making captured images accessible from anywhere, including the Render-deployed dashboard which has no access to the Pi's filesystem.
 
+### Why per-class event cooldowns?
+Without cooldowns, a single dog walking past the camera could generate dozens of Blynk notifications and MQTT messages within a few seconds as it triggers multiple motion detection cycles. Two separate cooldown systems are used: `MOTION_COOLDOWN_SECONDS` (in `motion_service.py`) controls how often the camera captures a new still image, and `EVENT_COOLDOWN_SECONDS` (in `event_manager.py`) controls how often Blynk and MQTT notifications fire. Separating them means detections are still logged to SQLite and MongoDB on every valid motion event, but push notifications are rate-limited independently.
 
+### Why Z-score anomaly detection?
+A fixed threshold ("alert if more than 5 detections in an hour") is fragile because the right number depends on the normal activity level of the specific environment. A Z-score measures how many standard deviations the current hour's detection count is above the 24-hour mean, so the anomaly detector self-calibrates to each deployment. A quiet house where one detection per hour is normal would flag 5 detections as anomalous, while a busy house where 10 per hour is normal would not — using the same threshold logic.
+
+---
 
 ### Limitations
 
-- No custom-trained YOLO model — uses general-purpose COCO pretrained weights.
-- No multi-camera support.
-- SQLite on Render requires a persistent volume or replacement with a cloud database for multi-instance deployments.
-- libcamera must be present on the Docker host (Pi OS) for Picamera2 to work inside the container.
-- SenseHAT temperature readings can be elevated by the Pi's CPU heat — a calibration offset could be applied in `env_data_service.py`.
+- The YOLO model uses general-purpose COCO pretrained weights rather than a custom-trained model. Detection accuracy for edge cases (partially visible animals, unusual angles) would improve significantly with a fine-tuned dataset.
+- SenseHAT temperature readings are elevated by the Pi's CPU heat. The raw values are useful for relative comparisons and trend analysis but do not reflect true ambient temperature. A calibration offset could be applied in `env_data_service.py`.
+- The motion background frame is fixed at initialisation. Gradual lighting changes (lights switching on and off) cause the fixed background to drift from the current scene, increasing false positive detections over time. `reset_background()` exists to address this but must currently be called manually.
+- libcamera must be present on the Docker host (Raspberry Pi OS) for Picamera2 to work inside the container. The Docker image cannot run the detection loop on non-Pi hardware without camera simulation.
+- The SSE live update system uses an in-process queue, which means the Flask dashboard must run with a single gunicorn worker. This limits concurrent SSE clients to the number of threads configured.
+- The Render free tier spins down after 15 minutes of inactivity, meaning the first request after a period of inactivity takes 30–60 seconds to respond.
+- BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
+
+---
 
 ### Future Improvements
 
-- MQTT subscription for remote LED control
-- Historical analytics charts in the Flask dashboard.
-- Edge TPU acceleration (Coral USB) for faster inference.
-- Systemd service for automatic startup
-- Behavioural classification beyond label detection (e.g. dog urinating).
-
-
+- Behavioural classification beyond label detection (e.g. dog urinating). The original motivation for this project was detecting a specific dog behaviour. The system currently identifies that a dog is present but not what it is doing. A pose estimation model (such as YOLOv8-pose) combined with multi-frame analysis of position and movement patterns could classify behaviours like circling, leg lifting, and prolonged stationary hovering — the sequence that usually precedes urination. This would allow targeted alerts rather than alerting on every detection.
+- Custom-trained YOLO model fine-tuned on a dataset of the specific dog and home environment, improving accuracy for the exact use case.
+- MQTT subscription for remote LED colour control. Currently LEDs only reflect local system state.
+- Edge TPU acceleration (Coral USB) to reduce YOLO inference time on the Pi.
+- Systemd service for automatic startup on Pi boot without manual `python app/main.py`.
+- Multi-camera support — a second camera covering another room would extend the detection area.
+- Configurable thresholds via the Flask dashboard UI. Currently requires editing `.env` and restarting.
+- Automatic background frame reset on a timer in `motion_service.py` to handle gradual lighting changes without manual intervention.
 
 
 ---
@@ -988,13 +1017,13 @@ Render provides a public dashboard URL.
 ## Camera Not Detected
 
 ```bash
-libcamera-hello --list-cameras
+rpicam-hello --list-cameras
 ```
 
 Check:
 
 - Ribbon cable orientation
-- Camera enabled in `raspi-config`
+- Camera enabled in `raspi-config`(not necessary in most modern Raspberry Pis)
 
 ## SenseHAT Import Error
 
@@ -1130,7 +1159,7 @@ Confirm:
 
 ## AI Assistants & LLMs
 
-Large Language Models (LLMs) were utilized during the development of this project. The majority of the code was first written personally based on the Computer Systems & Networks Module lectures and labs, in addition to the knowledge from other modules (Programming, Web Development, Databases), before being tweaked.
+Large Language Models (LLMs) were utilized during the development of this project. The majority of the code was first written personally based on the Computer Systems & Networks module lectures and labs, in addition to the knowledge from other modules (Programming, Web Development, Databases), before being tweaked.
 
 The `analytics_service.py` file was largely generated with Claude to help integrating both MongoDB Atlas and the SQLite local database with the Flask web dashboard. New topics like TimeSeries, Z-scores, anomaly scoring, rolling averages, and Server-Sent Events for the real-time monitoring of the web dashboard are mainly focused in that file, though other files also have sections relating to these concepts, such as `dashboard.html`. Resources relating to these topics have been included in the resources section.
 
