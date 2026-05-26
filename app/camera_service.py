@@ -13,7 +13,7 @@ Why two modes?
     and sharpness. Still images are optimised for quality.
 
     Motion detection doesn't need detail. 640x480 grayscale frames are
-    sufficient for OpenCV contour analysis. Running OpenCV on full 
+    sufficient for OpenCV contour analysis. Running OpenCV on full
     1920x1080 frames wastes enormous CPU for no benefit.
 
     The detection image (sent to YOLO, saved to disk, uploaded to Cloudinary)
@@ -41,28 +41,29 @@ Disk protection:
     up over time.
 """
 
+import glob
 import os
 import time
-import glob
 from datetime import datetime
 
 import cv2
 import numpy as np
+from libcamera import Transform
 from picamera2 import Picamera2
 
 from config import (
-    STREAM_WIDTH,
-    STREAM_HEIGHT,
-    CAPTURE_WIDTH,
-    CAPTURE_HEIGHT,
-    CAMERA_WARMUP_SECONDS,
-    CAMERA_CAPTURE_SETTLE,
     CAMERA_BRIGHTNESS,
+    CAMERA_CAPTURE_SETTLE,
     CAMERA_CONTRAST,
-    CAMERA_SHARPNESS,
     CAMERA_SATURATION,
+    CAMERA_SHARPNESS,
+    CAMERA_WARMUP_SECONDS,
+    CAPTURE_HEIGHT,
+    CAPTURE_WIDTH,
     IMAGE_SAVE_DIR,
     MAX_STORED_IMAGES,
+    STREAM_HEIGHT,
+    STREAM_WIDTH,
 )
 from logger_service import logger
 
@@ -84,12 +85,12 @@ class CameraService:
 
         # ── Quality controls applied to both modes ────────────────────────────
         self._camera_controls = {
-            "AeEnable":        True,    # auto-exposure
-            "AwbEnable":       True,    # auto-white-balance
-            "Brightness":      CAMERA_BRIGHTNESS,
-            "Contrast":        CAMERA_CONTRAST,
-            "Sharpness":       CAMERA_SHARPNESS,
-            "Saturation":      CAMERA_SATURATION,
+            "AeEnable":   True,              # auto-exposure
+            "AwbEnable":  True,              # auto-white-balance
+            "Brightness": CAMERA_BRIGHTNESS,
+            "Contrast":   CAMERA_CONTRAST,
+            "Sharpness":  CAMERA_SHARPNESS,
+            "Saturation": CAMERA_SATURATION,
         }
 
         # ── Initialise Picamera2 ──────────────────────────────────────────────
@@ -98,14 +99,20 @@ class CameraService:
 
             # Preview config — low resolution, continuous stream for OpenCV.
             self._preview_config = self._camera.create_preview_configuration(
-                main={"size": (STREAM_WIDTH, STREAM_HEIGHT)},
+                main={"size": (STREAM_WIDTH, STREAM_HEIGHT),
+                      "format": "RGB888"},
                 controls=self._camera_controls,
+                # The camera is mounted upside down — 180° rotation applied.
+                transform=Transform(hflip=True, vflip=True),
             )
 
             # Still config — high resolution, maximum quality for YOLO/storage.
             self._still_config = self._camera.create_still_configuration(
-                main={"size": (CAPTURE_WIDTH, CAPTURE_HEIGHT)},
+                main={"size": (CAPTURE_WIDTH, CAPTURE_HEIGHT),
+                      "format": "RGB888"},
                 controls=self._camera_controls,
+                # The camera is mounted upside down — 180° rotation applied.
+                transform=Transform(hflip=True, vflip=True),
             )
 
             # Start in preview mode — this is the default operating state.
@@ -119,8 +126,8 @@ class CameraService:
             time.sleep(CAMERA_WARMUP_SECONDS)
             logger.info("Camera ready.")
 
-            # Try to enable autofocus if the camera module supports it
-            # (Camera Module 3 supports continuous AF; v2 does not).
+            # Try to enable autofocus if the camera module supports it.
+            # (Camera Module 3 supports continuous AF; v2 does not.)
             try:
                 from libcamera import controls as lc
                 self._camera.set_controls(
@@ -138,7 +145,7 @@ class CameraService:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def get_preview_frame(self) -> np.ndarray:
+    def get_preview_frame(self) -> np.ndarray | None:
         """
         Capture one low-resolution BGR frame for motion detection.
 
@@ -146,14 +153,13 @@ class CameraService:
         This is called continuously in the motion detection loop and must
         be as fast as possible.
 
-        Colour space conversion is applied (RGBA/RGB → BGR) to 
-        produce a frame compatible with OpenCV.
+        Colour space conversion is applied (RGB → BGR) to produce a frame
+        compatible with OpenCV.
 
         Returns:
             numpy array, or None on failure.
         """
         try:
-            # capture_array() returns the frame in the current configuration.
             frame = self._camera.capture_array()
 
             # Convert RGBA → BGR if needed (Picamera2 can return RGBA).
@@ -257,12 +263,10 @@ class CameraService:
                 # Colour per class: green for person, blue for dog.
                 colour = (0, 255, 0) if label == "person" else (255, 100, 0)
 
-                # Draw bounding rectangle.
                 cv2.rectangle(image, (x1, y1), (x2, y2), colour, 2)
 
-                # Draw label background for readability.
-                text      = f"{label} {score:.0%}"
-                font      = cv2.FONT_HERSHEY_SIMPLEX
+                text       = f"{label} {score:.0%}"
+                font       = cv2.FONT_HERSHEY_SIMPLEX
                 font_scale = 0.7
                 thickness  = 2
                 (tw, th), _ = cv2.getTextSize(text, font, font_scale, thickness)
@@ -272,7 +276,7 @@ class CameraService:
                     (x1, y1 - th - 8),
                     (x1 + tw + 4, y1),
                     colour,
-                    -1,   # filled
+                    -1,
                 )
 
                 cv2.putText(
@@ -281,11 +285,10 @@ class CameraService:
                     (x1 + 2, y1 - 4),
                     font,
                     font_scale,
-                    (255, 255, 255),   # white text
+                    (255, 255, 255),
                     thickness,
                 )
 
-            # Save annotated version alongside the original.
             base, ext      = os.path.splitext(source_path)
             annotated_path = f"{base}_annotated{ext}"
             cv2.imwrite(annotated_path, image)

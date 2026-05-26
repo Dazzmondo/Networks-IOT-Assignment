@@ -32,15 +32,10 @@
       color: #222;
     }
 
-    h1 {
-      margin-bottom: 0.25rem;
-    }
+    h1 { margin-bottom: 0.25rem; }
+    h2 { margin-top: 2rem; margin-bottom: 0.75rem; }
 
-    h2 {
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
-    }
-
+    
     /* ─────────────────────────────────────────────
        DETECTION COUNTS
     ───────────────────────────────────────────── */
@@ -61,10 +56,7 @@
       text-align: center;
     }
 
-    .count-box h2 {
-      margin: 0;
-      font-size: 2rem;
-    }
+    .count-box h2 { margin: 0; font-size: 2rem; }
 
     .dog    { color: #c0392b; }
     .person { color: #2980b9; }
@@ -102,9 +94,7 @@
       padding: 1rem;
     }
 
-    .metric-box p {
-      margin: 0;
-    }
+    .metric-box p { margin: 0; }
 
     .metric-label {
       font-size: 0.8rem;
@@ -161,9 +151,7 @@
       border-bottom: 1px solid #eee;
     }
 
-    th {
-      background: #f0f0f0;
-    }
+    th { background: #f0f0f0; }
 
     img.thumb {
       max-height: 60px;
@@ -175,9 +163,7 @@
     ───────────────────────────────────────────── */
 
     @media (max-width: 600px) {
-      .counts {
-        flex-direction: column;
-      }
+      .counts { flex-direction: column; }
     }
 
   </style>
@@ -190,6 +176,7 @@
   <p>
     OpenCV motion detection → YOLOv8 ONNX → MQTT + Blynk + Flask Dashboard
   </p>
+
 
   <!-- ─────────────────────────────────────────────
        LIVE ENVIRONMENT DATA
@@ -212,17 +199,14 @@
   ───────────────────────────────────────────── -->
 
   <div class="counts">
-
     <div class="count-box">
       <h2 class="dog" id="count-dog">{{ dog_count }}</h2>
       <p>Dogs Detected</p>
     </div>
-
     <div class="count-box">
       <h2 class="person" id="count-person">{{ human_count }}</h2>
       <p>Humans Detected</p>
     </div>
-
   </div>
 
   <!-- ─────────────────────────────────────────────
@@ -239,27 +223,22 @@
   <h2>Analytics</h2>
 
   <div class="analytics">
-
     <div class="metric-box">
       <p class="metric-label">Rolling Avg (per hour)</p>
       <p class="metric-value" id="rolling-avg">{{ analytics.rolling_avg }}</p>
     </div>
-
     <div class="metric-box">
       <p class="metric-label">Current Hour</p>
       <p class="metric-value" id="current-hour">{{ analytics.current_hour }}</p>
     </div>
-
     <div class="metric-box">
       <p class="metric-label">Peak Hour (24 h)</p>
       <p class="metric-value" id="peak-hour">{{ analytics.peak_hour }}</p>
     </div>
-
     <div class="metric-box">
       <p class="metric-label">Anomaly Score (Z-score)</p>
       <p class="metric-value" id="anomaly-score">{{ analytics.anomaly_score }}</p>
     </div>
-
   </div>
 
   <!-- ─────────────────────────────────────────────
@@ -274,28 +253,24 @@
   <h2>Charts</h2>
 
   <div class="charts">
-
     <div class="chart-box">
       <h3>Detections Over Time</h3>
       <div class="chart-wrap">
         <canvas id="timeChart"></canvas>
       </div>
     </div>
-
     <div class="chart-box">
       <h3>Detection Totals</h3>
       <div class="chart-wrap">
         <canvas id="barChart"></canvas>
       </div>
     </div>
-
     <div class="chart-box">
       <h3>Temperature Trend</h3>
       <div class="chart-wrap">
         <canvas id="tempChart"></canvas>
       </div>
     </div>
-
   </div>
 
   <!-- ─────────────────────────────────────────────
@@ -307,9 +282,7 @@
   <table>
     <thead>
       <tr>
-        <th>Path</th>
-        <th>Method</th>
-        <th>Description</th>
+        <th>Path</th><th>Method</th><th>Description</th>
       </tr>
     </thead>
     <tbody>
@@ -317,6 +290,7 @@
       <tr><td>/api/counts</td>     <td>GET</td>       <td>Total counts</td></tr>
       <tr><td>/api/environment</td><td>GET</td>       <td>Latest SenseHAT data</td></tr>
       <tr><td>/api/analytics</td>  <td>GET</td>       <td>Rolling average and anomaly score</td></tr>
+      <tr><td>/api/status</td>     <td>GET</td>       <td>Service status</td></tr>
       <tr><td>/stream</td>         <td>GET (SSE)</td> <td>Live push updates</td></tr>
     </tbody>
   </table>
@@ -332,79 +306,40 @@
   <h2>Recent Detections</h2>
 
   {% if detections %}
-
   <table id="detections-table">
-
     <thead>
       <tr>
-        <th>#</th>
-        <th>Timestamp</th>
-        <th>Label</th>
-        <th>Confidence</th>
-        <th>Temp</th>
-        <th>Humidity</th>
-        <th>Blynk</th>
-        <th>MQTT</th>
-        <th>Image</th>
+        <th>#</th><th>Timestamp</th><th>Label</th><th>Confidence</th>
+        <th>Temp</th><th>Humidity</th><th>Blynk</th><th>MQTT</th><th>Image</th>
       </tr>
     </thead>
-
     <tbody id="detections-tbody">
-
       {% for d in detections %}
-
       <tr id="row-{{ d.id }}">
         <td>{{ d.id }}</td>
         <td>{{ d.timestamp }}</td>
-
-        <td class="{{ d.label }}">
-          {{ d.label | capitalize }}
-        </td>
-
+        <td class="{{ d.label }}">{{ d.label | capitalize }}</td>
         <td>{{ "%.0f"|format(d.confidence * 100) }}%</td>
-
         <td>{{ d.temp if d.temp is not none else "—" }}</td>
-
         <td>{{ d.humidity if d.humidity is not none else "—" }}</td>
-
         <td>{{ "✓" if d.blynk_notified else "—" }}</td>
-
         <td>{{ "✓" if d.mqtt_published else "—" }}</td>
-
         <td>
           {% if d.image_url %}
-            <!--
-              rel="noopener noreferrer" prevents the opened tab accessing
-              window.opener (reverse tabnabbing protection).
-            -->
-            <a href="{{ d.image_url }}"
-               target="_blank"
-               rel="noopener noreferrer">
-              <img class="thumb"
-                   src="{{ d.image_url }}"
-                   alt="{{ d.label }}"
-                   loading="lazy">
+            <a href="{{ d.image_url }}" target="_blank" rel="noopener noreferrer">
+              <img class="thumb" src="{{ d.image_url }}"
+                   alt="{{ d.label }}" loading="lazy">
             </a>
           {% else %}
             —
           {% endif %}
         </td>
-
       </tr>
-
       {% endfor %}
-
     </tbody>
-
   </table>
-
   {% else %}
-
-  <p>
-    No detections recorded yet.
-    Start main.py and trigger movement in front of the camera.
-  </p>
-
+  <p>No detections recorded yet. Start main.py and trigger movement in front of the camera.</p>
   {% endif %}
 
 
@@ -448,7 +383,6 @@
       document.getElementById('timeChart'),
       {
         type: 'line',
-
         data: {
           datasets: [
             {
@@ -465,7 +399,6 @@
             }
           ]
         },
-
         options: {
           responsive:          true,
           /*
@@ -475,15 +408,9 @@
             Without this, the canvas height set in CSS is ignored.
           */
           maintainAspectRatio: false,
-
           scales: {
-            x: {
-              type: 'time',
-              time: { unit: 'hour' }
-            },
-            y: {
-              beginAtZero: true
-            }
+            x: { type: 'time', time: { unit: 'hour' } },
+            y: { beginAtZero: true }
           }
         }
       }
@@ -497,19 +424,13 @@
       document.getElementById('barChart'),
       {
         type: 'bar',
-
         data: {
           labels: ['Dogs', 'Humans'],
-
           datasets: [{
-            data: [
-              counts.dog    || 0,
-              counts.person || 0
-            ],
+            data: [counts.dog || 0, counts.person || 0],
             backgroundColor: ['#c0392b', '#2980b9']
           }]
         },
-
         options: {
           responsive:          true,
           maintainAspectRatio: false
@@ -525,7 +446,6 @@
       document.getElementById('tempChart'),
       {
         type: 'line',
-
         data: {
           datasets: [{
             label:       'Temperature °C',
@@ -534,16 +454,11 @@
             fill:        false
           }]
         },
-
         options: {
           responsive:          true,
           maintainAspectRatio: false,
-
           scales: {
-            x: {
-              type: 'time',
-              time: { unit: 'hour' }
-            }
+            x: { type: 'time', time: { unit: 'hour' } }
           }
         }
       }
@@ -609,20 +524,6 @@
         imgCell = a.outerHTML;
       }
 
-      /*
-        The only values inserted as HTML here are:
-          - d.id        (integer from database)
-          - d.timestamp (ISO date string)
-          - d.label     (always "dog" or "person")
-          - d.confidence (float)
-          - d.temp, d.humidity (floats or null)
-          - d.blynk_notified, d.mqtt_published (booleans)
-          - imgCell (built with DOM methods above)
-
-        None of these can contain executable HTML.
-        d.label is also used as a CSS class name —
-        it is always one of two known values so this is safe.
-      */
       const labelCapitalised =
         d.label.charAt(0).toUpperCase() + d.label.slice(1);
 
@@ -658,13 +559,10 @@
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('environment', (e) => {
-
       const env = JSON.parse(e.data);
-
       document.getElementById('env-temp').textContent     = env.temp;
       document.getElementById('env-humidity').textContent = env.humidity;
       document.getElementById('env-pressure').textContent = env.pressure;
-
     });
 
 
@@ -676,15 +574,11 @@
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('counts', (e) => {
-
       const c = JSON.parse(e.data);
-
       document.getElementById('count-dog').textContent    = c.dog    || 0;
       document.getElementById('count-person').textContent = c.person || 0;
-
       barChart.data.datasets[0].data = [c.dog || 0, c.person || 0];
       barChart.update();
-
     });
 
 
@@ -696,14 +590,11 @@
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('analytics', (e) => {
-
       const a = JSON.parse(e.data);
-
       document.getElementById('rolling-avg').textContent   = a.rolling_avg;
       document.getElementById('current-hour').textContent  = a.current_hour;
       document.getElementById('peak-hour').textContent     = a.peak_hour;
       document.getElementById('anomaly-score').textContent = a.anomaly_score;
-
     });
 
 
@@ -719,17 +610,13 @@
     ───────────────────────────────────────────── */
 
     evtSource.addEventListener('timeseries', (e) => {
-
       const payload = JSON.parse(e.data);
       const newTs   = payload.timeseries || {};
-
       timeChart.data.datasets[0].data = newTs.dog    || [];
       timeChart.data.datasets[1].data = newTs.person || [];
       timeChart.update();
-
       tempChart.data.datasets[0].data = newTs.temp || [];
       tempChart.update();
-
     });
 
 

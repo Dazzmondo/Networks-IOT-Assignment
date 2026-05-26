@@ -8,3 +8,6 @@ images/
 detections.db
 models/yolov8n.onnx
 models/yolov8n.pt
+test_capture.jpg
+detections.db-shm
+detections.db-wal

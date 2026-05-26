@@ -23,31 +23,31 @@ Services started:
     - CameraService      (Picamera2 preview + HQ still)
     - MotionService      (OpenCV absolute difference motion detection)
     - DetectorService    (ONNX YOLOv8 with NMS)
-    - DBService          (SQLite)
+    - MongoService       (MongoDB Atlas cloud mirror — optional, non-fatal)
+    - DBService          (SQLite + optional MongoDB mirror via dual-write)
     - EnvDataService     (SenseHAT temperature/humidity/pressure)
     - BlynkService       (BlynkLib background thread)
     - MQTTService        (paho-mqtt background thread)
     - CloudinaryService  (image upload)
     - EventManager       (routes detections to all services)
-    - MongoService       (MongoDB Atlas cloud mirror -- optional)
 """
 
 import sys
 import time
 
-from logger_service     import logger
-from camera_service     import CameraService
-from motion_service     import MotionService
-from detector_service   import DetectorService
 from blynk_service      import BlynkService
-from mqtt_service       import MQTTService
-from db_service         import DBService
-from led_service        import LEDService
+from camera_service     import CameraService
 from cloudinary_service import CloudinaryService
+from config             import MOTION_LOOP_DELAY, TARGET_CLASSES
+from db_service         import DBService
+from detector_service   import DetectorService
 from env_data_service   import EnvDataService
 from event_manager      import EventManager
-from config             import MOTION_LOOP_DELAY, TARGET_CLASSES
+from led_service        import LEDService
+from logger_service     import logger
 from mongo_service      import MongoService
+from motion_service     import MotionService
+from mqtt_service       import MQTTService
 
 
 def main():
@@ -68,14 +68,15 @@ def main():
         sys.exit(1)
 
     # -- MongoDB Atlas (cloud mirror) ----------------------------------------
-    # MongoService is non-fatal -- if Atlas is unreachable or unconfigured
-    # the system continues with SQLite only.  mongo_service is passed into
-    # DBService so the dual-write pattern is handled transparently.
-    mongo_service = MongoService()        
+    # MongoService is non-fatal — if Atlas is unreachable or unconfigured
+    # the system continues with SQLite only.
+    mongo_service = MongoService()
 
     # SQLite is critical — exit if unavailable.
+    # DBService receives mongo_service so every successful SQLite write is
+    # automatically mirrored to Atlas when MongoDB is connected.
     try:
-        db_service = DBService()
+        db_service = DBService(mongo_service=mongo_service)
     except Exception as error:
         logger.error(f"Cannot start — database unavailable: {error}")
         led_service.set_offline()
@@ -121,7 +122,6 @@ def main():
     )
 
     # ── System ready ──────────────────────────────────────────────────────────
-    # LEDs go green. Blynk status updated.
     led_service.set_idle()
     blynk_service.update_status("SYSTEM ONLINE")
     logger.info(
@@ -137,8 +137,8 @@ def main():
     try:
         while True:
 
-            # ── Step 1: Read low-resolution preview frame ─────────────────────
-            # This is fast and cheap — just reading from the camera buffer.
+            # Step 1: Read low-resolution preview frame.
+            # This is fast and cheap. YOLO only runs when motion is detected.
             preview_frame = camera_service.get_preview_frame()
 
             if preview_frame is None:
@@ -146,21 +146,19 @@ def main():
                 time.sleep(MOTION_LOOP_DELAY)
                 continue
 
-            # ── Step 2: Check for motion ──────────────────────────────────────
+            # Step 2: Check for motion
             # OpenCV absolute difference — no YOLO, no disk write, very fast.
             # Returns False most of the time (nothing moving).
             motion_detected = motion_service.detect_motion(preview_frame)
 
             if not motion_detected:
-                # Nothing happening — sleep briefly and loop.
-                # This is the normal state 99% of the time.
                 time.sleep(MOTION_LOOP_DELAY)
                 continue
 
-            # ── Motion confirmed — from here YOLO will run ────────────────────
+            # Motion confirmed — YOLO will now run.
             logger.info("Motion confirmed. Capturing detection image…")
 
-            # ── Step 3: Capture high-quality still image ──────────────────────
+            # Step 3: Capture high-quality still image.
             # Switches camera to full-resolution still mode, captures,
             # then returns to preview mode.
             image_path = camera_service.capture_detection_image()
@@ -169,11 +167,11 @@ def main():
                 logger.warning("HQ capture failed — skipping YOLO for this event.")
                 continue
 
-            # ── Step 4: Run YOLO inference with NMS ───────────────────────────
-            # Only runs on this one image — not every frame.
+            # Step 4: Run YOLO inference with NMS.
+            # Only runs on this one image, not every frame.
             detections = detector_service.detect(image_path)
 
-            # ── Step 5: Filter to target classes ─────────────────────────────
+            # Step 5: Filter to target classes.
             # DetectorService already filters internally, but this guard
             # makes the intent explicit and handles any edge cases.
             valid_detections = [
@@ -193,7 +191,7 @@ def main():
                 f"{[{k: v for k, v in d.items() if k != 'box'} for d in valid_detections]}"
             )
 
-            # ── Step 6: Route each detection through EventManager ─────────────
+            # Step 6: Route each detection through EventManager.
             # This triggers Blynk, MQTT, SQLite, Cloudinary, LEDs.
             for detection in valid_detections:
                 event_manager.handle_detection(
@@ -208,7 +206,7 @@ def main():
         logger.error(f"Unhandled exception in main loop: {error}", exc_info=True)
 
     finally:
-        # ── Graceful shutdown ─────────────────────────────────────────────────
+        # Graceful shutdown.
         logger.info("Releasing resources…")
         blynk_service.update_status("SYSTEM OFFLINE")
         blynk_service.stop()
