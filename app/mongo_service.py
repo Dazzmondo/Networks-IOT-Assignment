@@ -65,8 +65,8 @@ Dependencies:
 
 from datetime import datetime, timedelta, timezone
 
-from logger_service import logger
-from config import (
+from app.logger_service import logger
+from app.config import (
     MONGO_URI,
     MONGO_DB_NAME,
     MONGO_COLLECTION,

@@ -19,13 +19,13 @@ Dependencies:
 import cloudinary
 import cloudinary.uploader
 
-from config import (
+from app.config import (
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
     CLOUDINARY_FOLDER,
 )
-from logger_service import logger
+from app.logger_service import logger
 
 
 class CloudinaryService:

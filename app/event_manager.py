@@ -34,16 +34,16 @@ All calls to self._mqtt are guarded with `if self._mqtt:`.
 
 import time
 
-from logger_service     import logger
-from config             import EVENT_COOLDOWN_SECONDS
-from events             import DOG_DETECTED_EVENT, HUMAN_DETECTED_EVENT
+from app.logger_service     import logger
+from app.config             import EVENT_COOLDOWN_SECONDS
+from app.events             import DOG_DETECTED_EVENT, HUMAN_DETECTED_EVENT
 
-from blynk_service      import BlynkService
-from mqtt_service       import MQTTService
-from db_service         import DBService
-from led_service        import LEDService
-from cloudinary_service import CloudinaryService
-from env_data_service   import EnvDataService
+from app.blynk_service      import BlynkService
+from app.mqtt_service       import MQTTService
+from app.db_service         import DBService
+from app.led_service        import LEDService
+from app.cloudinary_service import CloudinaryService
+from app.env_data_service   import EnvDataService
 
 
 class EventManager:

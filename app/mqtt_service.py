@@ -20,7 +20,7 @@ from datetime import datetime
 
 import paho.mqtt.client as mqtt
 
-from config import (
+from app.config import (
     MQTT_BROKER,
     MQTT_PORT,
     MQTT_TOPIC_EVENTS,
@@ -28,7 +28,7 @@ from config import (
     MQTT_TOPIC_STATUS,
     MQTT_USER_ID,
 )
-from logger_service import logger
+from app.logger_service import logger
 
 
 class MQTTService:

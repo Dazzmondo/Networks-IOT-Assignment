@@ -55,14 +55,14 @@ import time
 import cv2
 import numpy as np
 
-from config import (
+from app.config import (
     MOTION_MIN_AREA,
     MOTION_THRESHOLD,
     MOTION_BLUR_SIZE,
     MOTION_CONFIRMATION_FRAMES,
     MOTION_COOLDOWN_SECONDS,
 )
-from logger_service import logger
+from app.logger_service import logger
 
 
 class MotionService:

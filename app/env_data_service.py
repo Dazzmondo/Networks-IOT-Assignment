@@ -21,7 +21,7 @@ Usage:
     # data → {"temp": 22.5, "humidity": 48.2, "pressure": 1013.4}
 """
 
-from logger_service import logger
+from app.logger_service import logger
 
 
 class EnvDataService:

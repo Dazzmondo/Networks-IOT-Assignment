@@ -53,7 +53,7 @@ import math
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from logger_service import logger
+from app.logger_service import logger
 
 # Anomaly score thresholds.
 _ANOMALY_ELEVATED = 1.5

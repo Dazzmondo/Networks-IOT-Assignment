@@ -35,19 +35,19 @@ Services started:
 import sys
 import time
 
-from blynk_service      import BlynkService
-from camera_service     import CameraService
-from cloudinary_service import CloudinaryService
-from config             import MOTION_LOOP_DELAY, TARGET_CLASSES
-from db_service         import DBService
-from detector_service   import DetectorService
-from env_data_service   import EnvDataService
-from event_manager      import EventManager
-from led_service        import LEDService
-from logger_service     import logger
-from mongo_service      import MongoService
-from motion_service     import MotionService
-from mqtt_service       import MQTTService
+from app.blynk_service      import BlynkService
+from app.camera_service     import CameraService
+from app.cloudinary_service import CloudinaryService
+from app.config             import MOTION_LOOP_DELAY, TARGET_CLASSES
+from app.db_service         import DBService
+from app.detector_service   import DetectorService
+from app.env_data_service   import EnvDataService
+from app.event_manager      import EventManager
+from app.led_service        import LEDService
+from app.logger_service     import logger
+from app.mongo_service      import MongoService
+from app.motion_service     import MotionService
+from app.mqtt_service       import MQTTService
 
 
 def main():

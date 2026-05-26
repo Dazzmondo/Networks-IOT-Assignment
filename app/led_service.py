@@ -25,14 +25,14 @@ Usage:
 """
 import threading
 
-from config import (
+from app.config import (
     LED_GREEN,
     LED_RED,
     LED_BLUE,
     LED_OFF,
     LED_DETECTION_HOLD_SECONDS,
 )
-from logger_service import logger
+from app.logger_service import logger
 
 
 class LEDService:
