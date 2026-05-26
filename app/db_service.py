@@ -38,8 +38,8 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 
-from app.config import DB_PATH
-from app.logger_service import logger
+from config import DB_PATH
+from logger_service import logger
 
 
 class DBService:

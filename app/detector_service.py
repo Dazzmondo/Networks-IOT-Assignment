@@ -46,13 +46,13 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-from app.config import (
+from config import (
     CONFIDENCE_THRESHOLD,
     NMS_THRESHOLD,
     YOLO_INPUT_SIZE,
     TARGET_CLASSES,
 )
-from app.logger_service import logger
+from logger_service import logger
 
 # ── COCO class names (80 classes) ─────────────────────────────────────────────
 COCO_CLASSES = [

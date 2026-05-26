@@ -24,8 +24,8 @@ import time
 
 import BlynkLib
 
-from app.config import BLYNK_AUTH_TOKEN
-from app.logger_service import logger
+from config import BLYNK_AUTH_TOKEN
+from logger_service import logger
 
 
 class BlynkService:

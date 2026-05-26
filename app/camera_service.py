@@ -51,7 +51,7 @@ import numpy as np
 from libcamera import Transform
 from picamera2 import Picamera2
 
-from app.config import (
+from config import (
     CAMERA_BRIGHTNESS,
     CAMERA_CAPTURE_SETTLE,
     CAMERA_CONTRAST,
@@ -65,7 +65,7 @@ from app.config import (
     STREAM_HEIGHT,
     STREAM_WIDTH,
 )
-from app.logger_service import logger
+from logger_service import logger
 
 
 class CameraService:

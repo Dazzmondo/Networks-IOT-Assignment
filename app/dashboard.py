@@ -60,12 +60,12 @@ from flask_cors import CORS
 # so imports work as expected without modification. 
 # Insert not needed and causes issues when running locally.
 
-from app.analytics_service import AnalyticsService
-from app.config            import FLASK_DEBUG, FLASK_HOST, FLASK_PORT, MONGO_URI
-from app.db_service        import DBService
-from app.env_data_service  import EnvDataService
-from app.logger_service    import logger
-from app.mongo_service     import MongoService
+from analytics_service import AnalyticsService
+from config            import FLASK_DEBUG, FLASK_HOST, FLASK_PORT, MONGO_URI
+from db_service        import DBService
+from env_data_service  import EnvDataService
+from logger_service    import logger
+from mongo_service     import MongoService
 
 app = Flask(__name__, template_folder="templates")
 CORS(app)
