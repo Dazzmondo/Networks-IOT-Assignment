@@ -275,6 +275,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - The SSE live update system uses an in-process queue, which means the Flask dashboard must run with a single gunicorn worker. This limits concurrent SSE clients to the number of threads configured.
 - The Render free tier spins down after 15 minutes of inactivity, meaning the first request after a period of inactivity takes 30–60 seconds to respond.
 - BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
+- The PiCamera 2 caused many problems throughout testing. The quality of the images proved to be blurry and unreliable. The initial Raspberry Pi 4 used for the assignment needed to be replaced due to the CSI Connector becoming damaged (likely due to overheating, measured at nearly 100°C at one point during testing). This poor image quality persisted across 2 separate cameras, 2 separate Raspberry Pis, and through attempts to improve the images with OpenCV. Normal camera tests in the terminal produced similarly poor quality images. In a more practical, production-ready system, better quality cameras would definitely be used.
 
 ---
 
