@@ -276,6 +276,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - The Render free tier spins down after 15 minutes of inactivity, meaning the first request after a period of inactivity takes 30–60 seconds to respond.
 - BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
 - The PiCamera 2 caused many problems throughout testing. The quality of the images proved to be blurry and unreliable. The initial Raspberry Pi 4 used for the assignment needed to be replaced due to the CSI Connector becoming damaged (likely due to overheating, measured at nearly 100°C at one point during testing). This poor image quality persisted across 2 separate cameras, 2 separate Raspberry Pis, and through attempts to improve the images with OpenCV. Normal camera tests in the terminal produced similarly poor quality images. In a more practical, production-ready system, better quality cameras would definitely be used.
+- I encountered issues with Onnx and OpenCV dependencies on my Raspberry Pi on 27/05/2026. I kept receiving a message "Illegal instruction" each time I tried to use them. This is likely due to updated versions of the software conflicting with the Raspberry Pi 4, but I can't confirm this. I tried downloading older versions of Onnx and OpenCV but this did not solve the issues. The result of this was that I could no longer run or test my program from 27/05/2026 onwards. Neither app/main.py nor app/dashboard.py were accessible. Despite trying to troubleshoot for hours, I could not find a solution to the problem. This issue occurred overnight, as everything was still working correctly on 26/05/2026.
 
 ---
 
@@ -1080,6 +1081,61 @@ Confirm:
 - `main.py` is running on the Pi
 - MongoDB Atlas contains detections
 - Render environment variables are correct
+
+---
+
+## Testing Logs & Project Journal
+
+### 📅 Monday, 25 May 2026
+
+*   **14:11** — 🟡 **Partial Success**
+    *   Multiple motion alerts triggered. 
+    *   Successfully identified **1 human**. 
+    *   Failed to recognize the target dog in the frame.
+*   **14:18** — ⚙️ **Hardware Setup Adjustments**
+    *   Positioned the physical camera upside down for easier mounting. 
+    *   Updated the camera_service.py code to flip 180 degrees.
+    *   Motion detection ran successfully.
+*   **14:27** — 🟢 **Detection Success**
+    *   Successfully identified **1 human** with **73% confidence**.
+*   **14:30** — 🚀 **System Optimization**
+    *   **Code Update**: Modified `camera_service.py` to handle the inverted hardware orientation.
+    *   **Results**: Immediate improvement. Detected **3 humans** and **2 dogs**.
+    *   **Integration**: Verified end-to-end telemetry. The Blynk mobile application successfully received real-time updates (**Dog confidence: 79%**, **Person confidence: 79%**).
+*   **16:19** — 🟢 **Detection Success**
+    *   Successfully detected **1 human** and **1 dog**.
+*   **17:00** — 🟢 **Detection Success**
+    *   Successfully detected **2 dogs**.
+
+---
+
+### 📅 Tuesday, 26 May 2026
+
+*   **18:33** — 🟢 **Detection Success**
+    *   Successfully detected **1 dog**.
+*   **19:56** — 🔴 **Detection Failure**
+    *   YOLOv8 failed to detect the dog. 
+    *   *Root cause analysis:* Extreme colour distortion and the top of the dog's head being cut off by the frame boundary.
+*   **20:07** — ⚠️ **Hardware Critical Fault**
+    *   The camera feed began displaying a persistent bright white and purple hue covering the entire image capture field. 
+    *   No software configuration settings were altered prior to this change. Root cause of the sensor distortion remains unknown. Further automation loops are blocked by this baseline imagery fault.
+*   **20:10** — 🔴 **Detection Failure**
+    *   The dog crossed directly in front of the lens. 
+    *   The system triggered motion, but the purple hardware color distortion was too severe for YOLOv8 to extract features.
+*   **21:03** — 🔧 **Troubleshooting Phase**
+    *   Adjusted the raw camera configurations manually, but the purple tint persisted. 
+    *   Executed a standalone test script directly via the Raspberry Pi terminal to bypass the main software loop. The raw images confirmed persistent blurring and colour issues, indicating a structural hardware or connection fault rather than a software regression.
+*   **21:53** — 📝 **Daily Summary**
+    *   Ceased physical testing for the evening. 
+    *   *Conclusion:* The afternoon run was highly successful. The modular python program and the Flask web dashboard executed smoothly without memory leaks. While image clarity was sub-optimal, objects were consistently classified, and remote notifications triggered correctly. The evening hardware degradation ultimately prevented full real-time validation.
+
+
+## Sample Images
+
+
+| Inverted Setup & Test Frame | Post-Orientation Fix (Detection) | Persistent Sensor Color Distortion |
+|:---:|:---:|:---:|
+| <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724847/iot-detector/longaimsmqyqxwoflq4j.jpg" width="300" alt="Dog detection 1"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724857/iot-detector/xmcuaz3biamdvn7xsgql.jpg" width="300" alt="Dog detection 2"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779816825/iot-detector/rvymwz53t80xfuh72sfw.jpg" width="300" alt="Dog detection 3"> |
 
 ---
 
