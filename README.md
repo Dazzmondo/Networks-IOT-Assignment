@@ -292,6 +292,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Automatic background frame reset on a timer in `motion_service.py` to handle gradual lighting changes without manual intervention.
 - Extra security/authentication features could be added. As this is a personal academic project, I wasn't worried about somebody unauthorised getting access to my dashboard or data. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
 - Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
+- As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with, hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
 
 
 ---
@@ -1094,7 +1095,6 @@ Confirm:
     *   Failed to recognize the target dog in the frame.
 *   **14:18** — ⚙️ **Hardware Setup Adjustments**
     *   Positioned the physical camera upside down for easier mounting. 
-    *   Updated the camera_service.py code to flip 180 degrees.
     *   Motion detection ran successfully.
 *   **14:27** — 🟢 **Detection Success**
     *   Successfully identified **1 human** with **73% confidence**.
@@ -1128,6 +1128,8 @@ Confirm:
 *   **21:53** — 📝 **Daily Summary**
     *   Ceased physical testing for the evening. 
     *   *Conclusion:* The afternoon run was highly successful. The modular python program and the Flask web dashboard executed smoothly without memory leaks. While image clarity was sub-optimal, objects were consistently classified, and remote notifications triggered correctly. The evening hardware degradation ultimately prevented full real-time validation.
+
+Note: These do not represent the full testing logs, but they represent the most important events once the program was functional. For example, attempted tests on 27/05/2026 failed at the beginning of the process due to issues relating to the installation dependencies preventing the program from being run.
 
 
 ## Sample Images
