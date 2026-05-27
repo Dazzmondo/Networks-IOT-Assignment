@@ -73,7 +73,10 @@ COCO_CLASSES = [
 
 # Resolve model path absolutely from this file's location.
 # app/detector_service.py → project root → models/yolov8n.onnx
-_BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BASE_DIR = os.getenv(
+    "PROJECT_ROOT",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 _MODEL_PATH = os.path.join(_BASE_DIR, "models", "yolov8n.onnx")
 
 

@@ -13,8 +13,10 @@ Why structured logging matters:
 import logging
 import os
 
+from config import LOG_DIR
+
 # Ensure the logs directory exists before configuring the file handler.
-os.makedirs("logs", exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Named logger doesn't depend on root logger config
 logger = logging.getLogger("IoTDetector")
@@ -25,7 +27,7 @@ if not logger.handlers:
     _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
  
     # File handler — persistent log
-    _file_handler = logging.FileHandler("logs/events.log")
+    _file_handler = logging.FileHandler(os.path.join(LOG_DIR, "events.log"))
     _file_handler.setFormatter(_formatter)
 
     # Stream handler — stdout / Docker logs

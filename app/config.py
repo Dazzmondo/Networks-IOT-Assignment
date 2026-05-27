@@ -91,11 +91,6 @@ CAMERA_CONTRAST    = float(os.getenv("CAMERA_CONTRAST",    "1.1"))
 CAMERA_SHARPNESS   = float(os.getenv("CAMERA_SHARPNESS",   "1.2"))
 CAMERA_SATURATION  = float(os.getenv("CAMERA_SATURATION",  "1.0"))
 
-# Directory where captured images are saved.
-IMAGE_SAVE_DIR = os.getenv(
-    "IMAGE_SAVE_DIR",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "images"),
-)
 
 # ── Disk Space Protection ─────────────────────────────────────────────────────
 # Maximum number of images to keep in the images/ folder.
@@ -143,12 +138,6 @@ MQTT_TOPIC_ENV    = f"/{MQTT_USER_ID}/telemetry/environment"
 MQTT_TOPIC_STATUS = f"/{MQTT_USER_ID}/status"
 
 
-# ── SQLite persistence ────────────────────────────────────────────────────────
-DB_PATH = os.getenv(
-    "DB_PATH",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "detections.db"),
-)
-
 # ── MongoDB Atlas (cloud mirror) ──────────────────────────────────────────────
 # MONGO_URI is the full connection string from the Atlas "Connect" dialog.
 # Format: mongodb+srv://<user>:<password>@<cluster>.mongodb.net/
@@ -181,3 +170,23 @@ LED_DETECTION_HOLD_SECONDS = float(os.getenv("LED_DETECTION_HOLD_SECONDS", "2.0"
 FLASK_HOST  = os.getenv("FLASK_HOST",  "0.0.0.0")
 FLASK_PORT  = int(os.getenv("FLASK_PORT", "5000"))
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+
+# ── File paths and directories ───────────────────────────────────────────────
+BASE_DIR = os.getenv(
+    "PROJECT_ROOT",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+IMAGE_DIR = os.path.join(BASE_DIR, "images")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(IMAGE_DIR, exist_ok=True)
+
+# SQLite database file path. Used if MONGO_URI is not set.  
+DB_PATH = os.path.join(DATA_DIR, "detections.db")
+
+IMAGE_SAVE_DIR = IMAGE_DIR

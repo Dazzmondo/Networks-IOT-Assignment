@@ -1,12 +1,5 @@
 # =============================================================================
-# Two services sharing one Docker image:
-#
-#   smart-detector
-#     Main detection loop. Runs continuously on the Pi.
-#     Requires Pi hardware (camera + SenseHAT).
-#     Pipeline: preview stream → OpenCV motion → HQ capture → YOLO → events
-#
-#   Flask web dashboard. 
+#  Flask web dashboard. 
 #     Reads from MongoDB Atlas when configured,
 #     or from shared SQLite database when running locally.
 #     No hardware access needed.
@@ -31,28 +24,13 @@
 # =============================================================================
 services:
 
-  # ── Detection loop ──────────────────────────────────────────────────────────
-  smart-detector:
-    build: .
-    container_name: smart-iot-detector
-    restart: unless-stopped
-    env_file:
-      - .env
+  # ── Flask Dashboard ─────────────────────────────────────────────────────────
+  # The smart-detector service is intentionally absent.
+  # libcamera is a Pi kernel driver that cannot run inside a Docker container.
+  # Run the detection loop natively instead:
+  #   PYTHONPATH=app python3 app/main.py
+  # The dashboard reads from the SQLite database and images that main.py writes.
 
-    # Required for Pi Camera (libcamera/CSI) and SenseHAT GPIO.
-    privileged: true
-
-    volumes:
-      - /dev:/dev              # full device access for camera + SenseHAT
-      - ./logs:/app/logs       # persistent log files
-      - ./images:/app/images   # persistent detection images
-      - ./data:/app/data       # shared SQLite database directory
-      - ./models:/app/models   # YOLO ONNX model
-
-    command: ["python", "app/main.py"]
-
-
-  # ── Flask dashboard ─────────────────────────────────────────────────────────
   dashboard:
     build: .
     container_name: iot-dashboard
@@ -64,16 +42,15 @@ services:
       - "5000:5000"
 
     volumes:
-      - ./data:/app/data       # reads from same DB as smart-detector
-      - ./images:/app/images   # serves detection images
+      - ./data:/app/data       # reads detections.db written by native detector loop
+      - ./images:/app/images   # reads annotated images saved by native detector loop
+      - ./logs:/app/logs       # shared log directory
 
     command: [
       "gunicorn",
       "--workers", "1",
       "--threads", "4",
+      "--worker-class", "gthread",
       "--bind", "0.0.0.0:5000",
-      "app.dashboard:app"
+      "dashboard:app"
     ]
-
-    depends_on:
-      - smart-detector
