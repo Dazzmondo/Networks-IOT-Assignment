@@ -288,6 +288,8 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Multi-camera support — a second camera covering another room would extend the detection area.
 - Configurable thresholds via the Flask dashboard UI. Currently requires editing `.env` and restarting.
 - Automatic background frame reset on a timer in `motion_service.py` to handle gradual lighting changes without manual intervention.
+- Extra security/authentication features could be added. As this is a personal academic project, I wasn't worried about somebody unauthorised getting access to my dashboard or data. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
+- Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
 
 
 ---
