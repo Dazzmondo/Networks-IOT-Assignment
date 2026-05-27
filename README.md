@@ -1133,7 +1133,7 @@ Confirm:
 ## Sample Images
 
 
-| Inverted Setup & Test Frame | Post-Orientation Fix (Detection) | Persistent Sensor Color Distortion |
+| Dog Detection 1 | Dog Detection 2 | Dog Detecton 3 |
 |:---:|:---:|:---:|
 | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724847/iot-detector/longaimsmqyqxwoflq4j.jpg" width="300" alt="Dog detection 1"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724857/iot-detector/xmcuaz3biamdvn7xsgql.jpg" width="300" alt="Dog detection 2"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779816825/iot-detector/rvymwz53t80xfuh72sfw.jpg" width="300" alt="Dog detection 3"> |
 
