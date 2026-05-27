@@ -276,7 +276,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - The Render free tier spins down after 15 minutes of inactivity, meaning the first request after a period of inactivity takes 30–60 seconds to respond.
 - BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
 - The PiCamera 2 caused many problems throughout testing. The quality of the images proved to be blurry and unreliable. The initial Raspberry Pi 4 used for the assignment needed to be replaced due to the CSI Connector becoming damaged (likely due to overheating, measured at nearly 100°C at one point during testing). This poor image quality persisted across 2 separate cameras, 2 separate Raspberry Pis, and through attempts to improve the images with OpenCV. Normal camera tests in the terminal produced similarly poor quality images. In a more practical, production-ready system, better quality cameras would definitely be used.
-- I encountered issues with Onnx and OpenCV dependencies on my Raspberry Pi on 27/05/2026. I kept receiving a message "Illegal instruction" each time I tried to use them. This is likely due to updated versions of the software conflicting with the Raspberry Pi 4, but I can't confirm this. I tried downloading older versions of Onnx and OpenCV but this did not solve the issues. The result of this was that I could no longer run or test my program from 27/05/2026 onwards. Neither app/main.py nor app/dashboard.py were accessible. Despite trying to troubleshoot for hours, I could not find a solution to the problem. This issue occurred overnight, as everything was still working correctly on 26/05/2026.
+
 
 ---
 
@@ -292,7 +292,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Automatic background frame reset on a timer in `motion_service.py` to handle gradual lighting changes without manual intervention.
 - Extra security/authentication features could be added. As this is a personal academic project, I wasn't worried about somebody unauthorised getting access to my dashboard or data. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
 - Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
-- As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with, hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
+- As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
 
 
 ---
