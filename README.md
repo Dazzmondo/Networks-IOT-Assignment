@@ -1158,7 +1158,7 @@ Verify topic subscriptions match `MQTT_USER_ID`.
     *   Ceased physical testing for the evening. 
     *   *Conclusion:* The afternoon run was highly successful. The modular python program and the Flask web dashboard executed smoothly without memory leaks. While image clarity was sub-optimal, objects were consistently classified, and remote notifications triggered correctly. The evening hardware degradation ultimately prevented full real-time validation.
 
-Note: These do not represent the full testing logs, but they represent the most important events once the program was functional. For example, attempted tests on 27/05/2026 failed at the beginning of the process due to issues relating to the installation dependencies preventing the program from being run.
+Note: These do not represent the full testing logs, but they represent the most important events once the program was functional. For example, attempted tests on 27/05/2026 failed at the beginning of the process due to issues relating to the installation dependencies preventing the program from being run. There were also significant issues with camera blurring (most likely due to the hardware, but cause not completely clear) preventing successful detection, and limiting opportunities for further testing.
 
 
 ## Sample Images
