@@ -252,7 +252,7 @@ SQLite lives on the Pi's SD card and is not accessible remotely. MongoDB Atlas p
 The module labs build Flask APIs on the Pi and deploy them to Render, so Flask is a natural fit. Server-Sent Events (SSE) replace the original `<meta http-equiv="refresh" content="10">` pattern. SSE holds a single persistent HTTP connection per browser tab and the server pushes named events (`detection`, `environment`, `analytics`, `counts`, `timeseries`) whenever new data is available. This means the dashboard updates in under 2 seconds after a detection without reloading the page. This is a better user experience and avoids the visual flicker of a full reload. SSE was chosen over WebSockets because it is simpler (one-way server-to-client push is all that is needed) and works natively with Flask's streaming response support.
 
 ### Why Docker?
-Docker ensures the system can be deployed on the Pi without manually managing Python versions, virtual environments, or conflicting system packages. It also demonstrates containerisation as a self-learned technology beyond the module content. I used to sell Google Kubernetes Engine (GKE) as part of the Google Cloud Platform, and noticed from interactions with CIOs and CTOs that Docker containers and serverless represented trends business were moving towards. Thus, I wanted to learn Docker/containerisation technology. The implementation covers multi-service `docker-compose.yml` configuration, volume mounts for persistent data. NOTE: Hardware access and SenseHAT data are not accessible through Docker deployment. For SenseHAT data please run local deployment.
+Docker ensures the system can be deployed on the Pi without manually managing Python versions, virtual environments, or conflicting system packages. It also demonstrates containerisation as a self-learned technology beyond the module content. I used to sell Google Kubernetes Engine (GKE) as part of the Google Cloud Platform, and noticed from interactions with CIOs and CTOs that Docker containers and serverless represented trends business were moving towards. Thus, I wanted to learn Docker/containerisation technology. The implementation covers multi-service `docker-compose.yml` configuration and volume mounts for persistent data. Hardware access (camera, SenseHAT) can't be passed to the container, so the detection loop always runs natively on the Pi.
 
 ### Why Cloudinary?
 The Pi captures detection images to its local SD card, but those images are only accessible from the local network. Cloudinary uploads annotated dog detection images (with YOLO bounding boxes drawn) to a Continuous Delivery Network (CDN) and returns a public HTTPS URL. This URL is stored in SQLite, mirrored to MongoDB, included in the MQTT event payload, and displayed as a clickable thumbnail in the Flask dashboard — making captured images accessible from anywhere.
@@ -274,7 +274,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - The SSE live update system uses an in-process queue, which means the Flask dashboard must run with a single gunicorn worker. This limits concurrent SSE clients to the number of threads configured.
 - BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
 - The PiCamera 2 caused many problems throughout testing. The quality of the images proved to be blurry and unreliable. The initial Raspberry Pi 4 used for the assignment needed to be replaced due to the CSI Connector becoming damaged (likely due to overheating, measured at nearly 100°C at one point during testing). This poor image quality persisted across 2 separate cameras, 2 separate Raspberry Pis, and through attempts to improve the images with OpenCV. Normal camera tests in the terminal produced similarly poor quality images. In a more practical, production-ready system, better quality cameras would definitely be used.
-- When deployed through Docker, SenseHAT real-time data can't be seen through the dashboard. This is because the hardware configuration could not be implemented in Docker. This was also a factor in the choice to not use Render. 
+- When deployed through Docker, SenseHAT real-time data can't be seen through the dashboard, as hardware access cannot be passed through to the container. This was also a factor in the choice to not use Render. 
 - It was ultimately decided to abandon Render because the system could not be effectively deployed in a functional state. It progressed to the point where the website said it deployed, but it returned a 502 error when you tried to load the url. The code was failing to deploy correctly and it was getting too close to the deadline to debug in time.
 
 
@@ -290,10 +290,10 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Multi-camera support — a second camera covering another room would extend the detection area.
 - Configurable thresholds via the Flask dashboard UI. Currently requires editing `.env` and restarting.
 - Automatic background frame reset on a timer in `motion_service.py` to handle gradual lighting changes without manual intervention.
-- Extra security/authentication features could be added. As this is a personal academic project, I wasn't worried about somebody unauthorised getting access to my dashboard or data. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
+- Extra security/authentication features could be added. As this is a personal academic project, unauthorised access to the dashboard or data was not a concern. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
 - Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
 - As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
-- This was originally intended to be deployed in the cloud with Render. It ultimately became too difficult to debug the problems with the deadline approaching so quickly. However, a natural evolution of this project could be to deploy it to Render or another cloud provider like Amazon Web Services, Microsoft Azure, or the Google Cloud Platform.
+- This was originally intended to be deployed in the cloud with Render. It ultimately became too difficult to debug the problems with the deadline approaching so quickly. However, a natural evolution of this project could be to deploy it to Render or another cloud provider like Amazon Web Services, Microsoft Azure, or the Google Cloud Platform, making it accessible from outside the local network without requiring Docker on the Pi.
 
 
 ---
@@ -1043,12 +1043,13 @@ docker compose up -d --build            # Force full image re-compilation after 
 
 
 | Symptom | Likely Cause | Fix |
-| :--- | :--- | :--- |
-| `ModuleNotFoundError: No module named 'analytics_service'` | Gunicorn missing environment search context paths. | Ensure your `docker-compose.yml` environment variable block contains `- PYTHONPATH=/app/app`. |
-| `PermissionError: [Errno 13] Permission denied` | Shared volume directories (`data/`, `logs/`) are locked by `root`. | Run `sudo chown -R $USER:$USER logs data images` on the host Pi terminal. |
-| `failed to bind host port 0.0.0.0:5000: address already in use` | A lingering application process or container is locking port 5000. | Force close background instances by running `docker compose down` followed by `pkill -f gunicorn`. |
-| `ModuleNotFoundError: No module named 'libcamera'` | Attempting to execute the hardware loop inside an isolated container. | Stop container-level tracking. Run your core engine natively via `PYTHONPATH=app python3 -m app.main`. |
-| `cannot connect to Docker daemon` | Active local profile lacks administrative execution privileges. | Run `sudo usermod -aG docker $USER && newgrp docker` to update permissions. |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'analytics_service'` | Docker image built before `PYTHONPATH` was set in the Dockerfile. | Run `docker compose build --no-cache` to rebuild the image with the current Dockerfile. |
+| `PermissionError: [Errno 13] Permission denied` | Volume directories owned by `root`. | Run `sudo chown -R $USER:$USER data logs images` on the Pi. |
+| `failed to bind host port 0.0.0.0:5000: address already in use` | Another process is holding port 5000. | Run `docker compose down` then `pkill -f gunicorn`, then retry. |
+| `ModuleNotFoundError: No module named 'libcamera'` | Detection loop running inside a container. | Run the detection loop natively: `PYTHONPATH=app python3 app/main.py`. |
+| `cannot connect to Docker daemon` | User not in the docker group. | Run `sudo usermod -aG docker $USER && newgrp docker`. |
+| Dashboard shows no data | MongoDB is empty — detector has not run yet. | Start the native detection loop and trigger motion in front of the camera. |
 
 
 ---
