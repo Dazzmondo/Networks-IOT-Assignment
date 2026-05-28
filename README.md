@@ -294,6 +294,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
 - As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
 - This was originally intended to be deployed in the cloud with Render. It ultimately became too difficult to debug the problems with the deadline approaching so quickly. However, a natural evolution of this project could be to deploy it to Render or another cloud provider like Amazon Web Services, Microsoft Azure, or the Google Cloud Platform, making it accessible from outside the local network without requiring Docker on the Pi.
+- Could add indexes to scale up with larger amounts of SQL data.
 
 
 ---

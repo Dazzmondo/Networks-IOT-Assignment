@@ -153,20 +153,17 @@ class MotionService:
 
         # ── Step 6: Find contours in the binary mask ──────────────────────────
         contours, _ = cv2.findContours(
-            thresh.copy(),
+            thresh, # OpenCV 3+ doesn't require .copy() anymore; updates inline safely
             cv2.RETR_EXTERNAL,
             cv2.CHAIN_APPROX_SIMPLE,
         )
 
-        # ── Step 7: Filter contours by minimum area ───────────────────────────
-        # Tiny contours are noise — shadows, a leaf blowing past a window,
-        # minor exposure flicker. MOTION_MIN_AREA filters these out.
-        # A dog or person typically produces a contour area of 10,000-50,000+
-        # pixels at 640x480 resolution.
-        significant_motion = any(
-            cv2.contourArea(c) >= MOTION_MIN_AREA
-            for c in contours
-        )
+        # ── Step 7: Filter contours safely & efficiently ──────────────────────
+        # Calculate areas once to prevent empty sequence crashes and duplicate loops
+
+        contour_areas = [cv2.contourArea(c) for c in contours]
+        max_area = max(contour_areas) if contour_areas else 0.0
+        significant_motion = max_area >= MOTION_MIN_AREA
 
         # ── Step 8: Motion confirmation counter ───────────────────────────────
         if significant_motion:
@@ -191,6 +188,8 @@ class MotionService:
         if elapsed < MOTION_COOLDOWN_SECONDS:
             remaining = int(MOTION_COOLDOWN_SECONDS - elapsed)
             logger.debug(f"Motion cooldown active — {remaining}s remaining.")
+            # Clear or hold the frame count so it doesn't inflate during cooldown
+            self._motion_frame_count = MOTION_CONFIRMATION_FRAMES - 1 
             return False
 
         # ── Motion confirmed ──────────────────────────────────────────────────
@@ -198,9 +197,7 @@ class MotionService:
         self._motion_frame_count = 0    # reset for next event
 
         logger.info(
-            f"Motion confirmed "
-            f"(largest contour area approx "
-            f"{max(cv2.contourArea(c) for c in contours):.0f}px)"
+            f"Motion confirmed (largest contour area approx {max_area:.0f}px)"
         )
         return True
 

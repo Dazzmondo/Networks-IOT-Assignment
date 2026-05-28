@@ -166,7 +166,7 @@ class DBService:
                 # get_recent() returns — keeps the mirror consistent.
                 # The mirror is attempted after commit so SQLite is safe
                 # even if MongoDB raises an exception.
-                if self._mongo:
+                if self._mongo and self._mongo.is_enabled():
                     row = conn.execute(
                         "SELECT * FROM detections WHERE id = ?", (row_id,)
                     ).fetchone()

@@ -112,7 +112,7 @@ if CAPTURE_WIDTH <= 0 or CAPTURE_HEIGHT <= 0:
 # Seconds to wait after switching to still config before capturing.
 # Allows auto-exposure and auto-white-balance to settle on the new mode.
 # Increase if images are still dark or blurry.
-CAMERA_CAPTURE_SETTLE = float(os.getenv("CAMERA_CAPTURE_SETTLE", "1.0"))
+CAMERA_CAPTURE_SETTLE = float(os.getenv("CAMERA_CAPTURE_SETTLE", "2.0"))
 # Validation to ensure CAMERA_CAPTURE_SETTLE is positive. If zero or negative, set to default of 1.0.
 if CAMERA_CAPTURE_SETTLE <= 0:
     raise ValueError("CAMERA_CAPTURE_SETTLE must be > 0")
@@ -218,7 +218,12 @@ if EVENT_COOLDOWN_SECONDS < 1:
 
 # ── MQTT (HiveMQ public broker) ───────────────────────────────────────────────
 MQTT_BROKER       = os.getenv("MQTT_BROKER",  "broker.hivemq.com")
+
 MQTT_PORT         = int(os.getenv("MQTT_PORT", "1883"))
+# Validation to ensure MQTT_PORT is between 1 and 65535.
+if not 1 <= MQTT_PORT <= 65535:
+    raise ValueError("MQTT_PORT must be between 1 and 65535")
+
 MQTT_USER_ID      = os.getenv("MQTT_USER_ID", "iot-detector")
 MQTT_TOPIC_EVENTS = f"/{MQTT_USER_ID}/events"
 MQTT_TOPIC_ENV    = f"/{MQTT_USER_ID}/telemetry/environment"
@@ -256,7 +261,12 @@ if LED_DETECTION_HOLD_SECONDS <= 0:
 
 # ── Flask dashboard ───────────────────────────────────────────────────────────
 FLASK_HOST  = os.getenv("FLASK_HOST",  "0.0.0.0")
+
 FLASK_PORT  = int(os.getenv("FLASK_PORT", "5000"))
+# Validation to ensure FLASK_PORT is between 1 and 65535.
+if not 1 <= FLASK_PORT <= 65535:
+    raise ValueError("FLASK_PORT must be between 1 and 65535")
+
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
 
