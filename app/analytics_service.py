@@ -3,7 +3,6 @@ Purpose:
     Computes statistical analytics over the detection history stored in SQLite
     or MongoDB Atlas, depending on which backend is available.
 
-
 Analytics produced:
 
     Rolling average (detections / hour):
@@ -17,8 +16,7 @@ Analytics produced:
 
     Peak hour:
         The hour label (e.g. "14:00") with the highest detection count
-        in the last 24 hours.  Useful for spotting recurring activity patterns
-        (e.g. postman arrives every day at 10:00).
+        in the last 24 hours.  Useful for spotting recurring activity patterns.
 
     Anomaly score (Z-score):
         Measures how many standard deviations the current hour count
@@ -30,17 +28,16 @@ Analytics produced:
             score >= 2.5 -> High
 
     Why Z-score?
-        Simple threshold checks ("alert if > 5 detections") are fragile --
-        the right threshold depends on how busy the environment normally is.
+        Simple threshold checks ("alert if > 5 detections") are fragile.
+        The right threshold depends on how busy the environment normally is.
         A Z-score normalises against the system's own baseline so the
         anomaly detector self-calibrates to each deployment.
-
 
 MongoDB vs SQLite analytics:
     When MongoService is connected, compute() and chart_data() delegate
     the heavy aggregation work to MongoDB's pipeline ($dateTrunc, $group,
     $avg, $sum).  This pushes computation to the database tier rather than
-    pulling raw rows into Python -- more efficient at scale and demonstrates
+    pulling raw rows into Python. This is more efficient at scale and demonstrates
     the aggregation pipeline from the Databases module.
 
     When MongoDB is not available, the same metrics are computed locally
@@ -82,7 +79,7 @@ class AnalyticsService:
         self._mongo = mongo_service
 
 
-    # -- Public API -----------------------------------------------------------
+    # ── Public API ──────────────────────────────────────────────────────────────
     def compute(self) -> dict:
         """
         Compute rolling average, current hour count, peak hour, and anomaly score.
@@ -133,7 +130,7 @@ class AnalyticsService:
         return self._chart_data_from_sqlite()
 
 
-    # -- MongoDB-backed computation -------------------------------------------
+    # ── MongoDB-backed computation ──────────────────────────────────────────
     def _compute_from_mongo(self) -> dict:
         """
         Compute analytics using MongoDB aggregation pipeline results.
@@ -258,7 +255,7 @@ class AnalyticsService:
             return self._chart_data_from_sqlite()
 
 
-    # -- SQLite-backed computation --------------------------------------------
+    # ── SQLite-backed computation ──────────────────────────────────────────
     def _compute_from_sqlite(self) -> dict:
         """
         Compute analytics from raw SQLite rows using Python.
@@ -370,7 +367,7 @@ class AnalyticsService:
             return self._empty_chart_data()
 
 
-    # -- Shared helpers -------------------------------------------------------
+    # ── Shared helpers ──────────────────────────────────────────────────────────
     def _hourly_buckets_raw(self) -> dict:
         """
         Return a dict mapping ISO hour strings to total detection counts

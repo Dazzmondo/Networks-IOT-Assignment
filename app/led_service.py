@@ -7,7 +7,7 @@ Why LED feedback?
     state visually — green for idle/online, red for an event/detection.
 
     Adding LED feedback to this project:
-      - Demonstrates the physical IoT layer (sensor/device output).
+      - Demonstrates the physical IOT layer (sensor/device output).
       - Makes it easy to see what the system is doing without a monitor.
 
 Colour convention:
@@ -60,7 +60,7 @@ class LEDService:
 
         self._timer: threading.Timer | None = None
 
-    # -- Public API ---------------------------------------------------------------
+    # ── Public API ───────────────────────────────────────────────────────────────
 
     def set_idle(self):
         """
@@ -104,7 +104,7 @@ class LEDService:
         self._set_colour(LED_OFF)
         logger.debug("LEDs → off (offline)")
 
-    # -- Private helpers ----------------------------------------------------------
+    # ── Private helpers ───────────────────────────────────────────────────────────
 
     def _set_colour(self, colour: tuple):
         """Set the entire LED matrix to a single colour."""

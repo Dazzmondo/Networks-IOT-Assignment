@@ -107,7 +107,7 @@ class DBService:
             logger.error(f"Database initialisation failed: {error}")
             raise
 
-    # -- Public API ---------------------------------------------------------------
+    # ── Public API ───────────────────────────────────────────────────────────────
 
     def log_detection(
         self,
@@ -162,7 +162,6 @@ class DBService:
                 )
 
                 # -- Mirror to MongoDB Atlas ----------------------------------
-                
                 # Fetch the full row so the document shape matches what
                 # get_recent() returns — keeps the mirror consistent.
                 # The mirror is attempted after commit so SQLite is safe

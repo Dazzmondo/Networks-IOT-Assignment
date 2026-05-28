@@ -1,6 +1,6 @@
 """
 Purpose:
-    Centralises ALL runtime configuration for the IoT detection system.
+    Centralises all runtime configuration for the IOT detection system.
     Values are loaded from a .env file so they can be changed without
     modifying source code.
 
@@ -45,6 +45,9 @@ MOTION_THRESHOLD = int(os.getenv("MOTION_THRESHOLD", "25"))
 # Gaussian blur kernel size for noise reduction before motion detection.
 # Must be odd number. Larger = more blur = less noise but less detail.
 MOTION_BLUR_SIZE = int(os.getenv("MOTION_BLUR_SIZE", "21"))
+# Validation to ensure MOTION_BLUR_SIZE is odd. If an even number is provided, increment by 1.
+if MOTION_BLUR_SIZE % 2 == 0:
+    MOTION_BLUR_SIZE += 1
 
 # Number of consecutive frames with motion required before triggering.
 # Prevents single-frame noise (shadows, lighting flicker) from triggering.
@@ -143,7 +146,6 @@ MQTT_TOPIC_STATUS = f"/{MQTT_USER_ID}/status"
 # Format: mongodb+srv://<user>:<password>@<cluster>.mongodb.net/
 #
 # Leave MONGO_URI blank to disable MongoDB — the system runs on SQLite only.
-# When set, every detection is mirrored to Atlas in addition to SQLite.
 # When set, every detection is mirrored to Atlas in addition to SQLite.
 # The dashboard reads from MongoDB when available, falling back to SQLite.
 MONGO_URI        = os.getenv("MONGO_URI",        "")

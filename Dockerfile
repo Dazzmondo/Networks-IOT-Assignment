@@ -39,7 +39,7 @@ COPY app/ app/
 # ── Runtime directories ───────────────────────────────────────────────────────
 # data/, logs/, and images/ are created as fallbacks for the container.
 # In production they are overridden by the volume mounts in docker-compose.yml.
-# models/ must exist so detector_service.py path check doesn't crash
+# models/ must exist so detector_service.py path check doesn't crash.
 # However, clear instructions that user must create models/ and add yolov8n.onnx
 # there before running the container (or locally) are included in the README.
 RUN mkdir -p logs images data

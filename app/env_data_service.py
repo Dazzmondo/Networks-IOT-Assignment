@@ -21,7 +21,6 @@ Usage:
 
 from logger_service import logger
 
-
 class EnvDataService:
     """
     Reads environmental sensor data from the SenseHAT.
@@ -72,7 +71,7 @@ class EnvDataService:
             return {"temp": 0.0, "humidity": 0.0, "pressure": 0.0}
 
 
-# -- Standalone test -----------------------------
+# ── Standalone test ───────────────────────────────────────────────────────────
 if __name__ == "__main__":
     service = EnvDataService()
     reading = service.read()

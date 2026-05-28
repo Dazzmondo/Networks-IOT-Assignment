@@ -59,7 +59,7 @@ class MQTTService:
         # loop_start() spawns a daemon thread to handle MQTT network I/O in the background.
         self._client.loop_start()
 
-    # -- Private callbacks -----------------------------------------------------------------
+    # ── Private callbacks ──────────────────────────────────────────────────────────────
 
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -93,7 +93,7 @@ class MQTTService:
             f"after {max_attempts} attempts."
         )
 
-    # -- Public API ------------------------------------------------------------------------
+    # ── Public API ───────────────────────────────────────────────────────────────
 
     def publish_detection(
         self,
@@ -144,7 +144,7 @@ class MQTTService:
         except Exception as error:
             logger.warning(f"MQTT disconnect error: {error}")
 
-    # -- Private helper --------------------------------------------------------------------
+    # ── Private helper ───────────────────────────────────────────────────────────
 
     def _publish(self, topic: str, payload: dict, qos: int, retain: bool) -> bool:
         try:

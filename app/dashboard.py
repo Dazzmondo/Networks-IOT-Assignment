@@ -82,12 +82,12 @@ from mongo_service     import MongoService
 app = Flask(__name__, template_folder="templates")
 CORS(app)
 
-# -- Initialise MongoDB if configured -----------------------------------------
+# ── Initialise MongoDB if configured ──────────────────────────────────────────
 # MongoService gracefully disables itself when MONGO_URI is blank, so
 # this is always safe to construct regardless of environment.
 mongo = MongoService()
 
-# -- Initialise core services -------------------------------------------------
+# ── Initialise core services ──────────────────────────────────────────────────
 # DBService receives the mongo instance so it can mirror writes to Atlas.
 # When MongoDB is enabled, the dashboard reads analytics and recent
 # detections from Atlas rather than SQLite — useful when the container

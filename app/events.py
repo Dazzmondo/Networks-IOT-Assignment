@@ -9,13 +9,13 @@ Purpose:
     Blynk console (case-sensitive).
 """
 
-# -- Detection events ----------------------------------------------------------
+# ── Detection events ──────────────────────────────────────────────────────────────
 DOG_DETECTED_EVENT   = "dog_detected"
 HUMAN_DETECTED_EVENT = "human_detected"
 
-# -- System lifecycle events ---------------------------------------------------
+# ── System lifecycle events ─────────────────────────────────────────────────────
 SYSTEM_START_EVENT = "system_started"
 SYSTEM_ERROR_EVENT = "system_error"
 
-# -- Camera events -------------------------------------------------------------
+# ── Camera events ───────────────────────────────────────────────────────────────
 CAMERA_OFFLINE_EVENT = "camera_offline"

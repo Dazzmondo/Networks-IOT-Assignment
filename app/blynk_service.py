@@ -60,7 +60,7 @@ class BlynkService:
         self._thread.start()
         logger.info("Blynk background thread started.")
 
-    # -- Background loop (private) ----------------------------------------------
+    # ── Background loop (private) ───────────────────────────────────────────────────────
 
     def _run_loop(self):
         """
@@ -69,8 +69,8 @@ class BlynkService:
                 blynk.run()
                 sleep(...)
 
-        Includes exponential back-off on exceptions so transient network
-        errors do not spin the CPU.
+        Includes exponential back-off on exceptions so, if something goes wrong, 
+        it waits longer before trying again so the computer does not overheat.
         """
         retry_delay = 2
         while self._running:
@@ -84,7 +84,7 @@ class BlynkService:
                 time.sleep(retry_delay)
                 retry_delay = min(retry_delay * 2, 30)
 
-    # -- Public API ---------------------------------------------------------------
+    # ── Public API ──────────────────────────────────────────────────────────────
 
     def virtual_write(self, pin: int, value) -> None:
         """
@@ -108,7 +108,7 @@ class BlynkService:
         except Exception as error:
             logger.error(f"Blynk log_event '{event_code}' failed: {error}")
 
-    # -- Convenience wrappers (thin layer over virtual_write) ---------------------
+    # ── Convenience wrappers (thin layer over virtual_write) ──────────────────
 
     def update_status(self, status_text: str) -> None:
         """Update the system status label (V0)."""
