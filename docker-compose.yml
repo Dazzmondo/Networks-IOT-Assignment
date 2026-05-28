@@ -33,6 +33,9 @@ services:
       - ./data:/Networks-IOT-Assignment/data     # reads detections.db written by native detector loop
       - ./images:/Networks-IOT-Assignment/images # reads annotated images saved by native detector loop
       - ./logs:/Networks-IOT-Assignment/logs     # shared log directory
+      - ./models:/Networks-IOT-Assignment/models # shared model directory (for future use)
+      - ./app:/Networks-IOT-Assignment/app       # shared app directory (for future use)
+      
 
     command: [
       "gunicorn",
