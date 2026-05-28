@@ -119,7 +119,8 @@ class EventManager:
         """
         Handle a confirmed human detection.
         Unlike dogs, we do not upload annotated images for humans.
-        Cloudinary — image_path is logged to SQLite as-is for reference.
+        Images are not uploaded to Cloudinary for human detections —
+        image_path is logged to SQLite as a local file reference only.
         The box parameter is accepted for signature consistency with
         _handle_dog_detected but is not used here.
         """

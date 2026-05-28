@@ -292,6 +292,7 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - Extra security/authentication features could be added. As this is a personal academic project, I wasn't worried about somebody unauthorised getting access to my dashboard or data. However, on a production-ready system of a similar design, it likely would be important to keep this data anonymised.
 - Editable UI settings to change thresholds like detection confidence level or camera settings could be added to improve the user experience.
 - As mentioned in my Limitations section, the PiCamera 2 was not of good enough quality for this project, and caused a lot of problems throughout. The issues with hue, colour, and brightness made the process much more difficult. In a production-ready system I would ensure to use cameras of a far higher standard.
+- This was originally intended to be deployed in the cloud with Render. It ultimately became too difficult to debug the problems with the deadline approaching so quickly. However, a natural evolution of this project could be to deploy it to Render or another cloud provider like Amazon Web Services, Microsoft Azure, or the Google Cloud Platform.
 
 
 ---
@@ -937,7 +938,7 @@ Run these setup commands in your terminal:
 ```bash
 cd ~/Networks-IOT-Assignment
 
-# Pre-create tracking directories
+# Pre-create tracking directories (if these are not already made)
 mkdir -p data logs images models
 
 # Force file ownership back to your user profile
@@ -953,7 +954,7 @@ ls models/yolov8n.onnx   # Verify the model exists
 ---
 
 ### 10.2 — Verify Your Centralized Dynamic Paths
-Thanks to the absolute anchor configuration inside `app/config.py` (`BASE_DIR = os.path.abspath(...)`), the storage directories are dynamically mapped based on whether code runs on the metal or inside a container. 
+Thanks to the absolute anchor configuration inside `app/config.py` (`BASE_DIR = os.path.abspath(...)`), the storage directories are dynamically mapped based on whether the code runs with a python command in the terminal or inside a container. 
 
 Open your `.env` configuration file and ensure there are no overriding local path flags:
 ```bash

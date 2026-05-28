@@ -36,18 +36,6 @@ class BlynkService:
     from any thread because BlynkLib's internal socket operations are
     protected by its own locking.
 
-    Virtual pin mapping:
-        V0  System / detection status text
-        V1  Human detection counter
-        V2  Dog detection counter
-        V3  Last detected label
-        V4  Temperature (°C)
-        V5  Humidity (%)
- 
-    Blynk event codes (must match Blynk console exactly):
-        dog_detected
-        human_detected
-
     Usage:
         blynk_svc = BlynkService()
         blynk_svc.update_status("SYSTEM ONLINE")

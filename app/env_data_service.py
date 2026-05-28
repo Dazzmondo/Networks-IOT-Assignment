@@ -12,8 +12,6 @@ Module structure:
     This module defines a service class with a single read() method.  The
     if __name__ == "__main__": block allows standalone testing.
 
-    The SenseHAT object is created once on instantiation and reused across calls.
-
 Usage:
     from env_data_service import EnvDataService
     env = EnvDataService()
@@ -36,8 +34,7 @@ class EnvDataService:
     def __init__(self):
         try:
             # The SenseHAT library is only imported when this service is instantiated.
-            # If sense_hat is not installed (e.g. on Render or in the dashboard
-            # container), the ImportError is caught and the service degrades
+            # If sense_hat is not installed the ImportError is caught and the service degrades
             # gracefully instead of crashing the application.
             from sense_hat import SenseHat
             self._sense = SenseHat()

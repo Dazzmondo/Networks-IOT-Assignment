@@ -2,7 +2,7 @@
 #
 #   Step 1 — system packages via apt (on Raspberry Pi OS):
 #     sudo apt install -y python3-picamera2 sense-hat python3-paho-mqtt
-#     sudo apt install -y mosquitto-clients libgl1 libglib2.0-0 libatlas-base-dev
+#     sudo apt install -y mosquitto-clients libgl1 libglib2.0-0
 #
 #   Step 2 — create venv:
 #     python -m venv .venv --system-site-packages

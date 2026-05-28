@@ -264,7 +264,7 @@ class AnalyticsService:
         Compute analytics from raw SQLite rows using Python.
 
         Fetches all detections in the 24-hour window and builds hourly
-        buckets locally. Less efficient than MongoDB aggregation
+        buckets locally. Less efficient than MongoDB aggregation.
         """
         try:
             hourly = self._hourly_buckets_raw()

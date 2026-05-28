@@ -207,14 +207,14 @@ class DBService:
     def get_since_id(self, last_id: int) -> list[dict]:
         """
         Return all detections with id > last_id, oldest first.
- 
-        Used by the Server-Sent Events (SSE) worker to fetch only new rows on each 
-        poll tick rather than re-reading the full table.  The caller tracks last_id
+
+        Used by the Server-Sent Events (SSE) worker to fetch only new rows on each
+        poll tick rather than re-reading the full table. The caller tracks last_id
         and increments it as rows are processed.
- 
+
         Args:
             last_id: the highest row id already seen by the caller.
- 
+
         Returns:
             List of detection dicts, ordered by id ascending (oldest first).
         """
@@ -228,16 +228,16 @@ class DBService:
         except Exception as error:
             logger.error(f"DB get_since_id failed: {error}")
             return []
- 
- 
+
+
     def get_last_24h(self) -> list[dict]:
         """
         Return all detections from the last 24 hours, oldest first.
- 
+
         Used by AnalyticsService to compute rolling averages and build
         Chart.js time-series buckets.  The 24-hour window means the
         analytics stay relevant as the system runs over multiple days.
- 
+
         Returns:
             List of detection dicts ordered by timestamp ascending.
         """

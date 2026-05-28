@@ -25,7 +25,7 @@ logger.setLevel(logging.INFO)
 # Only add handlers if none exist yet (prevents duplicate lines on reimport).
 if not logger.handlers:
     _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
- 
+
     # File handler — persistent log
     _file_handler = logging.FileHandler(os.path.join(LOG_DIR, "events.log"))
     _file_handler.setFormatter(_formatter)

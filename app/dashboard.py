@@ -14,36 +14,47 @@ Endpoints:
 Server-Sent Events (SSE) architecture:
     /stream holds an open HTTP connection per browser tab.
     The server pushes named events (detection, environment, analytics,
-    counts, timeseries) whenever new data is available.  The browser
+    counts, timeseries) whenever new data is available. The browser
     EventSource API reconnects automatically if the connection drops —
     no client-side retry logic needed.
 
     A background thread (_sse_worker) polls the database and environment
     sensor on a short interval and pushes updates to all connected clients
-    via a thread-safe queue.  This keeps Flask route handlers simple
+    via a thread-safe queue. This keeps Flask route handlers simple
     and avoids blocking the WSGI worker.
 
 Data source selection:
     When MongoService is connected and enabled, the dashboard reads recent
-    detections and analytics from MongoDB Atlas.  This allows the Render-
-    deployed instance to serve live data without access to the local SQLite
-    file on the Pi.
+    detections and analytics from MongoDB Atlas. This allows the dashboard
+    to serve live data even when the local SQLite file is not accessible
+    (e.g. when running inside the Docker container while main.py writes
+    to the host filesystem).
 
     When MongoDB is not configured, all reads fall back to SQLite.
-    The same dashboard.py runs both locally (Pi) and on Render — the
-    active backend is determined at startup by whether MONGO_URI is set.
+    The active backend is determined at startup by whether MONGO_URI is set.
 
 Deployment:
-    Local (Pi):   PYTHONPATH=. python app/dashboard.py
-    Render:       gunicorn --workers 1 --threads 4 --bind 0.0.0.0:5000 app.dashboard:app
+    Docker (dashboard only):
+        docker compose up -d
+        Accessible at http://YOUR_PI_IP:5000
 
-    Note on gunicorn workers: must be 1 (or use the gevent worker class).
+    Native (Pi, for development):
+        cd ~/Networks-IOT-Assignment
+        source .venv/bin/activate
+        PYTHONPATH=app python3 app/dashboard.py
+
+    Detection loop always runs natively (libcamera cannot run in Docker):
+        PYTHONPATH=app python3 app/main.py
+
+Note on gunicorn workers:
+    Must be 1 (or use the gthread worker class, as configured in compose).
     SSE requires a persistent connection per client; multiple worker
     processes do not share the in-process queue used here.
 
 Note on SenseHAT:
-    EnvDataService uses a lazy import so this file does not crash on Render
-    (where sense-hat is not installed). It returns zero values gracefully.
+    EnvDataService uses a lazy import so this file does not crash inside
+    Docker (where sense-hat is not installed). It returns zero values
+    gracefully when the hardware is unavailable.
 """
 
 import json
@@ -55,11 +66,12 @@ import time
 from flask import Flask, Response, jsonify, render_template, stream_with_context
 from flask_cors import CORS
 
-# Removed sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# because gunicorn as app.dashboard:app sets the working directory to the app/ folder
-# so imports work as expected without modification. 
-# Insert not needed and causes issues when running locally.
-
+# Flat imports work because PYTHONPATH is set to the app/ directory in both
+# environments:
+#   Docker: ENV PYTHONPATH=/Networks-IOT-Assignment/app (Dockerfile)
+#   Native: PYTHONPATH=app python3 app/dashboard.py
+# Flask resolves template_folder="templates" relative to this file's location,
+# so app/templates/dashboard.html is found correctly in both cases.
 from analytics_service import AnalyticsService
 from config            import FLASK_DEBUG, FLASK_HOST, FLASK_PORT, MONGO_URI
 from db_service        import DBService
@@ -76,8 +88,10 @@ CORS(app)
 mongo = MongoService()
 
 # -- Initialise core services -------------------------------------------------
-# DBService receives the mongo instance so it can mirror writes.
-# On Render, analytics and recent detections are served from MongoDB.
+# DBService receives the mongo instance so it can mirror writes to Atlas.
+# When MongoDB is enabled, the dashboard reads analytics and recent
+# detections from Atlas rather than SQLite — useful when the container
+# cannot directly access the SQLite file written by the native detector.
 db        = DBService(mongo_service=mongo)
 env       = EnvDataService()
 analytics = AnalyticsService(db_service=db, mongo_service=mongo)
@@ -140,10 +154,10 @@ def _sse_worker():
 
     Events pushed:
         detection   — one per new DB row (newest detections only)
-        environment — SenseHAT reading on every tick
+        environment — SenseHAT reading on every tick (zeros in Docker)
         analytics   — rolling avg / anomaly score (recomputed each tick)
         counts      — total label counts (triggers bar chart update)
-        timeseries  — full 24 h bucket data (triggers line chart update)
+        timeseries  — full 24 h bucket data (triggers line and temp charts)
     """
     last_id = 0
 
@@ -167,6 +181,7 @@ def _sse_worker():
                 last_id = max(last_id, row["id"])
 
             # -- Environment --------------------------------------------------
+            # Returns zeros inside Docker where SenseHAT is unavailable.
             env_data = env.read()
             _broadcast("environment", env_data)
 
@@ -178,7 +193,7 @@ def _sse_worker():
             # -- Counts -------------------------------------------------------
             _broadcast("counts", db.get_counts())
 
-            # -- Time-series chart data --------------------------------------
+            # -- Time-series chart data ---------------------------------------
             # Only recompute and push when new rows arrived to reduce load.
             if new_rows:
                 _broadcast("timeseries", analytics.chart_data())
@@ -202,17 +217,17 @@ def index():
     """
     Render the HTML dashboard.
 
-    Recent detections are read from MongoDB when available (Render deployment)
-    or from SQLite when running locally on the Pi.
+    Recent detections are read from MongoDB when available, or from
+    SQLite when MongoDB is not configured.
 
     chart_data is injected as a Jinja variable so Chart.js bootstraps all
     charts immediately on page load. The SSE stream keeps them live after.
     """
-    # Select data source based on MongoDB availability
-    # On Render, mongo.is_enabled() is True and SQLite is not present,
-    # so recent detections come from Atlas.
-    # On the Pi, both are available; SQLite is used as the primary source
-    # since it is always up to date and does not require a network call.
+    # Select data source based on MongoDB availability.
+    # When MongoDB is enabled, reads come from Atlas — this works correctly
+    # whether the dashboard is running in Docker or natively on the Pi,
+    # and does not require direct access to the SQLite file.
+    # When MongoDB is not configured, SQLite is used as the sole source.
     if mongo.is_enabled():
         recent = mongo.get_recent(limit=20)
         counts = mongo.get_counts()
@@ -255,7 +270,12 @@ def api_counts():
 
 @app.route("/api/environment")
 def api_environment():
-    """Return current SenseHAT environmental readings as JSON."""
+    """
+    Return current SenseHAT environmental readings as JSON.
+
+    Returns zeros for temp, humidity, and pressure when running inside
+    Docker where the SenseHAT hardware is not accessible.
+    """
     reading = env.read()
     reading["deviceID"] = os.getenv("MQTT_USER_ID", "iot-detector")
     return jsonify(reading)
@@ -335,7 +355,7 @@ def stream():
         mimetype="text/event-stream",
         headers={
             "Cache-Control":     "no-cache",
-            "X-Accel-Buffering": "no", # disables Nginx response buffering
+            "X-Accel-Buffering": "no",  # disables Nginx response buffering
         },
     )
 

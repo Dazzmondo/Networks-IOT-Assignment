@@ -12,7 +12,7 @@ Architecture — dual-write pattern:
     the detection pipeline. The system degrades gracefully.
 
     SQLite  →  local dashboard, analytics_service, offline resilience
-    MongoDB →  Render dashboard, MongoDB aggregation analytics, remote access
+    MongoDB →  MongoDB aggregation analytics, remote access
 
     This mirrors the pattern used in real IoT deployments where an edge device
     maintains local storage for resilience and syncs to the cloud when available.
@@ -20,10 +20,12 @@ Architecture — dual-write pattern:
 Why MongoDB Atlas alongside SQLite?
     SQLite is excellent for local structured queries but cannot be accessed
     remotely — the database file lives on the Pi's SD card.  MongoDB Atlas
-    provides a free-tier cloud database that the Render-deployed dashboard
-    can query directly, making detection history accessible from anywhere.
+    provides a free-tier cloud database that can be queried from anywhere.
+    Originally this was planned as a feature for the Render-deployed dashboard
+    but was later removed.  However, the MongoDB integration remains as a demonstration 
+    of a cloud mirror and aggregation queries.
 
-    MongoDB's aggregation pipeline also enables richer server-side analytics
+    MongoDB's aggregation pipeline enables richer server-side analytics
     (hourly bucketing, rolling averages, peak detection) that would require
     multiple SQLite queries and Python post-processing to replicate.
 
@@ -157,7 +159,7 @@ class MongoService:
         Called immediately after the SQLite insert in db_service.py so
         both stores are updated in the same detection event.
 
-        The document shape mirrors the SQLite schema so the Render dashboard
+        The document shape mirrors the SQLite schema so the dashboard
         can read from MongoDB without any data transformation.
 
         Args:
@@ -370,8 +372,10 @@ class MongoService:
         """
         Return the most recent detections from MongoDB, newest first.
 
-        Used by the Render dashboard so it reads from Atlas rather than
-        the local SQLite file (which is not accessible from Render).
+        The original idea was that this would be used by the Render dashboard 
+        so it reads from Atlas rather than the local SQLite file 
+        (which is not accessible from Render).
+        It is also useful when the dashboard is running inside Docker and the SQLite file is on the host.
 
         Returns:
             List of detection dicts with string timestamps (ISO format).

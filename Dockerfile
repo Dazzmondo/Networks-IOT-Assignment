@@ -1,32 +1,16 @@
 # =============================================================================
-# Builds the IoT Pet & Human Detection System container.
+# Builds the IoT dashboard container.
 #
-# Architecture:
-#   This project uses a motion-gated detection pipeline:
-#     Picamera2 preview stream → OpenCV motion detection → HQ still capture
-#     → → YOLOv8 ONNX inference → EventManager → Blynk/MQTT/SQLite/MongoDB/Cloudinary
+# The detection loop (main.py) runs natively on the Pi — libcamera cannot
+# run inside a Docker container as it requires kernel-level hardware access.
+# Run it natively:
+#   cd ~/Networks-IOT-Assignment
+#   source .venv/bin/activate
+#   PYTHONPATH=app python3 app/main.py
 #
-#   Two services (defined in docker-compose.yml):
-#     smart-detector  — main detection loop (requires Pi hardware)
-#     dashboard       — Flask web dashboard (no hardware needed)
-#
-#   Both services share this single image with different startup commands.
-#
-# No PyTorch:
-#   torch (~426MB) is too large for the Raspberry Pi SD card.
-#   detector_service.py uses onnxruntime directly with a pre-exported
-#   yolov8n.onnx model (12MB). Export on a laptop, copy to models/.
-#
-# Pi Camera / SenseHAT in Docker:
-#   libcamera (used by Picamera2) requires kernel-level access to the
-#   Pi's CSI camera. The container mounts /dev from the host and runs
-#   in privileged mode so libcamera can find the camera device.
-#
-# MongoDB:
-#   MongoService connects outbound to Atlas over TCP 27017.
-#   No inbound ports or additional Docker networking config is required --
-#   Atlas is a hosted service and the container connects to it like any
-#   other external HTTPS/TCP service.
+# The dashboard reads from:
+#   - MongoDB Atlas (when MONGO_URI is set in .env)
+#   - SQLite via ./data volume mount (local fallback)
 # =============================================================================
 
 FROM python:3.11-slim
@@ -52,16 +36,13 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 #   /Networks-IOT-Assignment/app/config.py  etc.
 COPY app/ app/
 
-# ── Copy project-level files needed at runtime ────────────────────────────────
-# requirements.txt is already there; these are the other root-level files
-# the container needs (Dockerfile itself is not needed inside).
-COPY .env_example .
-
 # ── Runtime directories ───────────────────────────────────────────────────────
-# data/, logs/, images/ sit one level up at the project root on the host
-# but are mounted into /app/data etc inside the container (see compose).
-# models/ must exist so detector_service.py path check doesn't crash.
-RUN mkdir -p logs images data models
+# data/, logs/, and images/ are created as fallbacks for the container.
+# In production they are overridden by the volume mounts in docker-compose.yml.
+# models/ must exist so detector_service.py path check doesn't crash
+# However, clear instructions that user must create models/ and add yolov8n.onnx
+# there before running the container (or locally) are included in the README.
+RUN mkdir -p logs images data
 
 # ── Python path ───────────────────────────────────────────────────────────────
 # Adds app/ to the module search path so flat imports resolve correctly:

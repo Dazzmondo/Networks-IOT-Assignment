@@ -10,7 +10,7 @@ Why LED feedback?
       - Demonstrates the physical IoT layer (sensor/device output).
       - Makes it easy to see what the system is doing without a monitor.
 
-Colour convention (matches labs throughout the module):
+Colour convention:
     GREEN  → system idle, online, running normally
     RED    → detection event (dog or human detected)
     BLUE   → system starting up / initialising
@@ -46,8 +46,7 @@ class LEDService:
     def __init__(self):
         try:
             # The SenseHAT library is only imported when this service is instantiated.
-            # If sense_hat is not installed (e.g. on Render or in the dashboard
-            # container), the except block sets self._sense
+            # If sense_hat is not installed the except block sets self._sense
             # to None and all LED calls become silent no-ops.
             from sense_hat import SenseHat
             self._sense = SenseHat()

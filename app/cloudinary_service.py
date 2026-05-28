@@ -3,17 +3,20 @@ Purpose:
     Uploads detection images to Cloudinary and returns a public URL.
 
 Why Cloudinary?
-    Cloudinary makes captured images accessible from anywhere, not just the local Pi.  
-    This means dog-detection images can be viewed remotely (e.g. in the
-    Flask dashboard on Render, or in the MQTT payload).
+    Detection images are saved locally on the Pi's SD card and are not
+    accessible from outside the local network. Cloudinary provides a free-tier
+    CDN-hosted URL for each uploaded image. These URLs are stored in SQLite
+    and MongoDB alongside the detection record, and displayed as clickable
+    thumbnails in the dashboard — accessible from any device without needing
+    to access the Pi directly.
+
+    Upload is triggered only for dog detections since those are the events
+    where a bounding-box annotated image is saved to disk.
 
 Graceful degradation:
     If Cloudinary credentials are not set in .env, the service is
     disabled and returns None for every upload.  The rest of the system
     continues to work with local file paths only.
-
-Dependencies:
-    pip install cloudinary
 """
 
 import cloudinary

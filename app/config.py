@@ -144,8 +144,8 @@ MQTT_TOPIC_STATUS = f"/{MQTT_USER_ID}/status"
 #
 # Leave MONGO_URI blank to disable MongoDB — the system runs on SQLite only.
 # When set, every detection is mirrored to Atlas in addition to SQLite.
-# The Render-deployed dashboard reads from MongoDB when MONGO_URI is set,
-# falling back to SQLite API responses otherwise.
+# When set, every detection is mirrored to Atlas in addition to SQLite.
+# The dashboard reads from MongoDB when available, falling back to SQLite.
 MONGO_URI        = os.getenv("MONGO_URI",        "")
 MONGO_DB_NAME    = os.getenv("MONGO_DB_NAME",    "iot_detector")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "detections")
@@ -171,6 +171,7 @@ FLASK_HOST  = os.getenv("FLASK_HOST",  "0.0.0.0")
 FLASK_PORT  = int(os.getenv("FLASK_PORT", "5000"))
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
+
 # ── File paths and directories ────────────────────────────────────────────────
 # PROJECT_ROOT is set to /Networks-IOT-Assignment in the Dockerfile.
 # Native: resolved by going two dirname levels up from app/config.py,
@@ -194,7 +195,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
-# SQLite database file path. Used if MONGO_URI is not set.  
+# SQLite database file path. Used if MONGO_URI is not set.
 DB_PATH = os.path.join(DATA_DIR, "detections.db")
 
 IMAGE_SAVE_DIR = IMAGE_DIR

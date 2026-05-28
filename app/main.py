@@ -67,7 +67,7 @@ def main():
         led_service.set_offline()
         sys.exit(1)
 
-    # -- MongoDB Atlas (cloud mirror) ----------------------------------------
+    # ── MongoDB Atlas (cloud mirror) ───────────────────────────────────────────────────
     # MongoService is non-fatal — if Atlas is unreachable or unconfigured
     # the system continues with SQLite only.
     mongo_service = MongoService()
@@ -136,7 +136,6 @@ def main():
     # ── Main motion-gated detection loop ──────────────────────────────────────
     try:
         while True:
-
             # Step 1: Read low-resolution preview frame.
             # This is fast and cheap. YOLO only runs when motion is detected.
             preview_frame = camera_service.get_preview_frame()
