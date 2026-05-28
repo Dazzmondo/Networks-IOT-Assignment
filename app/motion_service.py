@@ -197,7 +197,7 @@ class MotionService:
         self._motion_frame_count = 0    # reset for next event
 
         logger.info(
-            f"Motion confirmed (largest contour area approx {max_area:.0f}px)"
+            f"Motion confirmed (largest contour area approx {max(cv2.contourArea(c) for c in contours):.0f}px)"
         )
         return True
 
