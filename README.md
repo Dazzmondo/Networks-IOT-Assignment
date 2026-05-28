@@ -18,7 +18,7 @@ A modular, event-driven IoT computer vision system running on a Raspberry Pi tha
 | Sense HAT | Environmental sensing (temperature, humidity, pressure) and LED feedback |
 | Flask | Web server and dashboard backend |
 | Jinja2 | HTML template rendering for Flask dashboard pages |
-| Gunicorn | Production WSGI server for Render deployment |
+| Gunicorn | Production WSGI server originally designed for Render deployment (later abandoned) |
 | Chart.js | Real-time analytics and dashboard visualisation |
 | chartjs-adapter-date-fns | Time-based formatting support for Chart.js time-series graphs |
 | Server-Sent Events (SSE) | Live event streaming from Flask server to browser dashboard |
@@ -98,7 +98,7 @@ MongoDB Atlas (Cloud Mirror)
 - **Peak activity analysis** — identifies the busiest hourly detection period over the previous 24 hours.
 - **MongoDB aggregation pipeline analytics** — server-side hourly bucketing and statistical aggregation when MongoDB Atlas is enabled.
 - **SQLite fallback architecture** — system automatically falls back to local SQLite analytics when MongoDB is unavailable.
-- **Cloud database deployment support** — MongoDB Atlas allows the Render-hosted dashboard to access live remote data without direct Pi filesystem access.
+- **Cloud database deployment support** — MongoDB Atlas allows the dashboard to access live remote data without direct Pi filesystem access.
 - **Blynk Cloud dashboard** — live status updates, detection counters, environmental telemetry, and push notifications using BlynkLib.
 - **MQTT event publishing** — structured JSON event payloads published to HiveMQ Cloud for detections and telemetry.
 - **MQTT telemetry topics** — environmental readings continuously published as lightweight IoT telemetry streams.
@@ -111,7 +111,7 @@ MongoDB Atlas (Cloud Mirror)
 - **Thread-safe event queues** — queue-based architecture safely distributes live updates to multiple connected dashboard clients.
 - **Automatic SSE reconnection** — browser EventSource API reconnects automatically if the live dashboard stream drops.
 - **Docker containerisation** — reproducible deployment with isolated detector and dashboard services.
-- **Gunicorn production deployment** — Flask dashboard deployable to Render using threaded Gunicorn workers.
+- **Gunicorn production deployment** — Flask dashboard deployable using threaded Gunicorn workers.
 - **Environment-based configuration** — all configurable settings managed through `.env` variables.
 - **Structured logging** — application events and errors written to both stdout and persistent log files.
 - **Graceful cloud fallback behaviour** — system continues operating locally if cloud services (MongoDB, MQTT, Cloudinary) become unavailable.
@@ -158,7 +158,6 @@ MongoDB Atlas (Cloud Mirror)
 - Sensor Telemetry Collection
 - Raspberry Pi / SenseHAT Integration
 - Edge Computing Concepts
-- Cloud Deployment (Render)
 - Cloudinary Media Hosting
 
 ---
@@ -167,6 +166,7 @@ MongoDB Atlas (Cloud Mirror)
 
 [![Watch the video](https://www.youtube.com/watch?v=AvDrT0WeD7k)](https://www.youtube.com/watch?v=AvDrT0WeD7k)
 
+NOTE: RENDER IS NO LONGER BEING USED IN THIS ASSIGNMENT
 
 ---
 
@@ -214,6 +214,7 @@ smart-iot-detector/
 
 ![System Architecture Diagram](projectGraphic.png)
 
+NOTE: RENDER IS NO LONGER BEING USED IN THIS ASSIGNMENT
 
 ---
 
@@ -238,7 +239,7 @@ PyTorch and the full Ultralytics package require approximately 426 MB of disk sp
 Exporting YOLOv8 to ONNX without the built-in Non-Maximum Suppression (NMS) layer (the default export behaviour) gives full control over confidence thresholds at runtime via environment variables. This means thresholds can be tuned without re-exporting the model. Per-class NMS is applied separately for dog and person detections so a high-confidence person box cannot suppress a nearby dog box — which would happen if NMS were applied globally across all classes.
 
 ### Why SenseHAT environmental data?
-The SenseHAT is physically attached to the Raspberry Pi used in this project, making it a natural additional data source. Publishing temperature, humidity, and pressure alongside detection events produces a richer data stream — environmental context is logged with every detection and displayed in the Flask dashboard. It also demonstrates the physical IoT layer (sensor input) beyond just the camera, and allows the system to correlate detection activity with environmental conditions over time through the analytics charts.
+The SenseHAT is physically attached to the Raspberry Pi used in this project, making it a natural additional data source. Publishing temperature, humidity, and pressure alongside detection events produces a richer data stream — environmental context is logged with every detection and displayed in the Flask dashboard. It also demonstrates the physical IoT layer (sensor input) beyond just the camera, and allows the system to correlate detection activity with environmental conditions over time through the analytics charts. NOTE: SenseHAT data is not available when deploying through Docker.
 
 ### Why SQLite with WAL mode?
 SQLite requires zero configuration, produces a single portable file, and persists across restarts when volume-mounted in Docker. It is sufficient for the event volume a home IoT system generates. WAL (Write-Ahead Logging) mode is enabled via `PRAGMA journal_mode=WAL` so the Flask dashboard can read from the database at the same time as the detection loop writes to it, without locking conflicts. This is important because the dashboard and main detection loop run as separate processes that both access the same file.
@@ -249,14 +250,11 @@ SQLite lives on the Pi's SD card and is not accessible remotely. MongoDB Atlas p
 ### Why Flask + Server-Sent Events over WebSockets page refresh?
 The module labs build Flask APIs on the Pi and deploy them to Render, so Flask is a natural fit. Server-Sent Events (SSE) replace the original `<meta http-equiv="refresh" content="10">` pattern. SSE holds a single persistent HTTP connection per browser tab and the server pushes named events (`detection`, `environment`, `analytics`, `counts`, `timeseries`) whenever new data is available. This means the dashboard updates in under 2 seconds after a detection without reloading the page. This is a better user experience and avoids the visual flicker of a full reload. SSE was chosen over WebSockets because it is simpler (one-way server-to-client push is all that is needed) and works natively with Flask's streaming response support.
 
-### Why Render?
-The smart-doorbell lab deploys Flask to Render, so the pattern is already established. The free tier is sufficient for a dashboard with low traffic. When `MONGO_URI` is set, the Render deployment reads from MongoDB Atlas rather than a local SQLite file, which resolves the remote access limitation. Render's free tier has short-term storage, but this does not matter because the persistent data lives in Atlas.
-
 ### Why Docker?
-Docker ensures the system can be deployed on the Pi without manually managing Python versions, virtual environments, or conflicting system packages. The same `docker compose up` command starts both the detection loop and the dashboard in isolated containers with all dependencies included. It also demonstrates containerisation as a self-learned technology beyond the module content. I used to sell Google Kubernetes Engine (GKE) as part of the Google Cloud Platform, and noticed from interactions with CIOs and CTOs that Docker containers and serverless represented trends business were moving towards. Thus, I wanted to learn Docker/containerisation technology. The implementation covers multi-service `docker-compose.yml` configuration, volume mounts for persistent data and hardware device access, privileged mode for libcamera and SenseHAT, and gunicorn as a production Web Server Gateway Interface (WGIS) server rather than Flask's development server.
+Docker ensures the system can be deployed on the Pi without manually managing Python versions, virtual environments, or conflicting system packages. The same `docker compose up` command starts both the detection loop and the dashboard in isolated containers with all dependencies included. It also demonstrates containerisation as a self-learned technology beyond the module content. I used to sell Google Kubernetes Engine (GKE) as part of the Google Cloud Platform, and noticed from interactions with CIOs and CTOs that Docker containers and serverless represented trends business were moving towards. Thus, I wanted to learn Docker/containerisation technology. The implementation covers multi-service `docker-compose.yml` configuration, volume mounts for persistent data. NOTE: Hardware access and SenseHAT data are not accessible through Docker deployment. For SenseHAT data please run local deployment.
 
 ### Why Cloudinary?
-The Pi captures detection images to its local SD card, but those images are only accessible from the local network. Cloudinary uploads annotated dog detection images (with YOLO bounding boxes drawn) to a Cont Delivery Network (CDN) and returns a public HTTPS URL. This URL is stored in SQLite, mirrored to MongoDB, included in the MQTT event payload, and displayed as a clickable thumbnail in the Flask dashboard — making captured images accessible from anywhere, including the Render-deployed dashboard which has no access to the Pi's filesystem.
+The Pi captures detection images to its local SD card, but those images are only accessible from the local network. Cloudinary uploads annotated dog detection images (with YOLO bounding boxes drawn) to a Continuous Delivery Network (CDN) and returns a public HTTPS URL. This URL is stored in SQLite, mirrored to MongoDB, included in the MQTT event payload, and displayed as a clickable thumbnail in the Flask dashboard — making captured images accessible from anywhere.
 
 ### Why per-class event cooldowns?
 Without cooldowns, a single dog walking past the camera could generate dozens of Blynk notifications and MQTT messages within a few seconds as it triggers multiple motion detection cycles. Two separate cooldown systems are used: `MOTION_COOLDOWN_SECONDS` (in `motion_service.py`) controls how often the camera captures a new still image, and `EVENT_COOLDOWN_SECONDS` (in `event_manager.py`) controls how often Blynk and MQTT notifications fire. Separating them means detections are still logged to SQLite and MongoDB on every valid motion event, but push notifications are rate-limited independently.
@@ -273,9 +271,10 @@ A fixed threshold ("alert if more than 5 detections in an hour") is fragile beca
 - The motion background frame is fixed at initialisation. Gradual lighting changes (lights switching on and off) cause the fixed background to drift from the current scene, increasing false positive detections over time. `reset_background()` exists to address this but must currently be called manually.
 - libcamera must be present on the Docker host (Raspberry Pi OS) for Picamera2 to work inside the container. The Docker image cannot run the detection loop on non-Pi hardware without camera simulation.
 - The SSE live update system uses an in-process queue, which means the Flask dashboard must run with a single gunicorn worker. This limits concurrent SSE clients to the number of threads configured.
-- The Render free tier spins down after 15 minutes of inactivity, meaning the first request after a period of inactivity takes 30–60 seconds to respond.
 - BlynkLib's in-memory counters (V1 human count, V2 dog count) reset to zero on every restart. SQLite and MongoDB hold the persistent counts, but the Blynk gauges do not reflect the true lifetime total after a restart.
 - The PiCamera 2 caused many problems throughout testing. The quality of the images proved to be blurry and unreliable. The initial Raspberry Pi 4 used for the assignment needed to be replaced due to the CSI Connector becoming damaged (likely due to overheating, measured at nearly 100°C at one point during testing). This poor image quality persisted across 2 separate cameras, 2 separate Raspberry Pis, and through attempts to improve the images with OpenCV. Normal camera tests in the terminal produced similarly poor quality images. In a more practical, production-ready system, better quality cameras would definitely be used.
+- When deployed through Docker, SenseHAT real-time data can't be seen through the dashboard. This is because the hardware configuration could not be implemented in Docker. This was also a factor in the choice to not use Render. 
+- It was ultimately decided to abandon Render because the system could not be effectively deployed in a functional state. It progressed to the point where the website said it deployed, but it returned a 502 error when you tried to load the url. The code was failing to deploy correctly and it was getting too close to the deadline to debug in time.
 
 
 ---
@@ -476,13 +475,6 @@ MQTT_USER_ID=your_unique_id
 
 Ensure `.env` is included in `.gitignore` before pushing code.
 
----
-
-## 1.6 Render Setup
-
-1. Create an account at `https://render.com`
-2. Sign in with GitHub
-3. Complete deployment later in Part 11
 
 ---
 
@@ -934,91 +926,133 @@ git push
 
 # PART 10 — Run with Docker
 
-> ⚠️ Complete manual setup/testing before using Docker.
+⚠️ **Important**: Complete your manual setup and hardware testing (Parts 1–9) before executing this section. Your environment must function locally first.
 
-## 10.1 Configure Database Path
+---
 
-Update `.env`:
+### 10.1 — Pre-create Host Directories and Fix Volume Permissions
+Docker processes create mapped volume directories with `root` privileges. Pre-creating them as your standard local user account avoids runtime `PermissionError` traps when your native detection scripts or the containerized dashboard try to write data.
 
-```env
-DB_PATH=/app/data/detections.db
+Run these setup commands in your terminal:
+```bash
+cd ~/Networks-IOT-Assignment
+
+# Pre-create tracking directories
+mkdir -p data logs images models
+
+# Force file ownership back to your user profile
+sudo chown -R $USER:$USER data logs images models
+chmod 755 data logs images models
 ```
 
-Create volume directory:
-
+Ensure your ONNX detection weights file is correctly positioned inside the models path:
 ```bash
-mkdir -p data
-```
-
-## 10.2 Build + Start
-
-```bash
-docker compose build
-docker compose up
-```
-
-Background mode:
-
-```bash
-docker compose up -d
-```
-
-## 10.3 Useful Commands
-
-```bash
-docker compose logs -f
-docker compose down
-docker compose restart
+ls models/yolov8n.onnx   # Verify the model exists
 ```
 
 ---
 
-# PART 11 — Deploy Dashboard to Render
+### 10.2 — Verify Your Centralized Dynamic Paths
+Thanks to the absolute anchor configuration inside `app/config.py` (`BASE_DIR = os.path.abspath(...)`), the storage directories are dynamically mapped based on whether code runs on the metal or inside a container. 
 
-> ⚠️ MongoDB Atlas must be configured before deployment.
-
-## 11.1 Create Web Service
-
-Go to:
-
-```text
-https://render.com
+Open your `.env` configuration file and ensure there are no overriding local path flags:
+```bash
+grep DB_PATH .env   # This should return nothing
 ```
-
-Create a new Web Service connected to GitHub.
-
-## 11.2 Render Settings
-
-| Setting | Value |
-|---|---|
-| Name | `iot-detector-dashboard` |
-| Runtime | Python |
-| Build Command | `pip install -r requirements.txt` |
-| Start Command | `gunicorn --workers 1 --threads 4 --bind 0.0.0.0:5000 app.dashboard:app` |
-
-## 11.3 Environment Variables
-
-```env
-MONGO_URI=
-MQTT_USER_ID=
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-```
-
-## 11.4 Deploy
-
-Click:
-
-```text
-Deploy Web Service
-```
-
-Render provides a public dashboard URL.
+*Note: If a relative `DB_PATH` property exists in your environment file, remove that line completely. The system automatically computes your optimal target bounds natively.*
 
 ---
 
-# PART 12 — Troubleshooting
+### 10.3 — Build the Application Container Image
+Compile the isolated web layout image by running:
+```bash
+docker compose build --no-cache
+```
+
+💡 **Docker Permission Troubleshooting**: If your user account returns a permission denied exception when attempting to interface with the Docker engine:
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+# Then retry compilation:
+docker compose build --no-cache
+```
+
+---
+
+### 10.4 — Execute the Hybrid Pipeline Environment
+To maximize video stream throughput and maintain hardware accessibility, launch your software packages using this dual operational framework:
+
+#### 1. Spin Up the Web Dashboard Container (Background)
+Deploy the multi-threaded Gunicorn web interface detached from your terminal:
+```bash
+docker compose up -d --remove-orphans
+```
+
+#### 2. Launch the Hardware Detection Loop (Natively on your Pi)
+Open a brand-new, separate terminal window, navigate to your root project workspace folder, and trigger the physical core pipeline with the terminal environment path mapper active:
+```bash
+PYTHONPATH=app python3 -m app.main
+```
+
+---
+
+### 10.5 — Verify System Synchronization
+Monitor initialization operations and verify data pathways by checking terminal outputs.
+
+#### Native Detection Loop Target Output:
+```text
+IoT Pet & Human Detection System — starting up
+MQTT connected to broker.hivemq.com:1883
+Pi Camera started in preview mode (640x480). Warming up…
+Camera ready.
+Continuous autofocus enabled.
+MongoDB Atlas connected — db=iot_detector collection=detections
+All services ready. Monitoring for motion...
+```
+
+#### Docker Web Dashboard Container Target Output:
+To view the status of your isolated web services, run:
+```bash
+docker compose logs -f dashboard
+```
+```text
+[INFO] Starting gunicorn
+[INFO] Listening at: http://0.0.0.0:5000
+[INFO] Using worker: gthread
+[INFO] MongoDB Atlas connected — db=iot_detector collection=detections
+[INFO] Database ready: /app/data/detections.db
+[INFO] SSE background worker started.
+```
+
+Once verified, open your browser and navigate to: `http://<YOUR_PI_IP_ADDRESS>:5000` to review live dashboard views.
+
+---
+
+### 10.6 — Useful Management Commands
+```bash
+docker compose logs -f dashboard        # Stream web interface dashboard tracking logs only
+docker compose down                     # Stop and safely tear down container stacks
+docker compose restart                  # Trigger rapid restart cycle on active web blocks
+docker compose up -d --build            # Force full image re-compilation after manual updates
+```
+
+---
+
+### 10.7 — Production Troubleshooting Ledger
+
+
+| Symptom | Likely Cause | Fix |
+| :--- | :--- | :--- |
+| `ModuleNotFoundError: No module named 'analytics_service'` | Gunicorn missing environment search context paths. | Ensure your `docker-compose.yml` environment variable block contains `- PYTHONPATH=/app/app`. |
+| `PermissionError: [Errno 13] Permission denied` | Shared volume directories (`data/`, `logs/`) are locked by `root`. | Run `sudo chown -R $USER:$USER logs data images` on the host Pi terminal. |
+| `failed to bind host port 0.0.0.0:5000: address already in use` | A lingering application process or container is locking port 5000. | Force close background instances by running `docker compose down` followed by `pkill -f gunicorn`. |
+| `ModuleNotFoundError: No module named 'libcamera'` | Attempting to execute the hardware loop inside an isolated container. | Stop container-level tracking. Run your core engine natively via `PYTHONPATH=app python3 -m app.main`. |
+| `cannot connect to Docker daemon` | Active local profile lacks administrative execution privileges. | Run `sudo usermod -aG docker $USER && newgrp docker` to update permissions. |
+
+
+---
+
+# PART 11 — Troubleshooting
 
 ## Camera Not Detected
 
@@ -1075,13 +1109,6 @@ ping broker.hivemq.com
 
 Verify topic subscriptions match `MQTT_USER_ID`.
 
-## Render Dashboard Empty
-
-Confirm:
-
-- `main.py` is running on the Pi
-- MongoDB Atlas contains detections
-- Render environment variables are correct
 
 ---
 
