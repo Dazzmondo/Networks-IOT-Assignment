@@ -298,9 +298,14 @@ DB_PATH = os.path.join(DATA_DIR, "detections.db")
 
 IMAGE_SAVE_DIR = IMAGE_DIR
 
-# YOLO ONNX model file path. Must be present for detection to work.
-# This executes during import, so if the file is missing, 
-# the application will fail to start with a clear error message.
-YOLO_MODEL_PATH = os.path.join(MODEL_DIR, "yolov8n.onnx")
-if not os.path.exists(YOLO_MODEL_PATH):
-    raise FileNotFoundError("YOLO model file not found. Please ensure 'yolov8n.onnx' is present in the models directory.")
+# Removed:
+#   YOLO_MODEL_PATH = os.path.join(MODEL_DIR, "yolov8n.onnx")
+#      if not os.path.exists(YOLO_MODEL_PATH):
+#      raise FileNotFoundError("YOLO model file not found. Please ensure 'yolov8n.onnx' is present in the models directory.")
+# 
+# Because it would break Docker's dashboard container which does not have the model file.
+# detector_service.py already checks for the model file at runtime.
+# If the model file is missing, the detector will log a warning and skip detection,
+# but the dashboard will still be able to read detections from the database and display them.
+# This separation allows the dashboard to function even if the model file is not present, which is
+# important for the Docker setup where the dashboard container does not have access to the model file.
