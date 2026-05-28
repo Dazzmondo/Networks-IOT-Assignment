@@ -287,3 +287,8 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "detections.db")
 
 IMAGE_SAVE_DIR = IMAGE_DIR
+
+# YOLO ONNX model file path. Must be present for detection to work.
+YOLO_MODEL_PATH = os.path.join(MODEL_DIR, "yolov8n.onnx")
+if not os.path.exists(YOLO_MODEL_PATH):
+    raise FileNotFoundError("YOLO model file not found. Please ensure 'yolov8n.onnx' is present in the models directory.")
