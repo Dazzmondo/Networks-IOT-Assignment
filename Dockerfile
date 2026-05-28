@@ -36,18 +36,21 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Copy requirements from project root first (Docker layer cache) ────────────
-WORKDIR /app
+# ── Set project root ──────────────────────────────────────────────────────────
+WORKDIR /Networks-IOT-Assignment
+
+# ── Python dependencies ───────────────────────────────────────────────────────
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir https://bit.ly/3C0PMVY || \
     pip install --no-cache-dir BlynkLib
 
-# ── Copy only the app/ subfolder contents into /app ───────────────────────────
-# "COPY app/ ." copies everything inside app/ directly into WORKDIR (/app),
-# so /app/main.py, /app/config.py etc — no app/app nesting.
-COPY app/ .
+# ── Copy project structure ────────────────────────────────────────────────────
+# Copies app/ as a subdirectory so the container mirrors the native layout:
+#   /Networks-IOT-Assignment/app/main.py
+#   /Networks-IOT-Assignment/app/config.py  etc.
+COPY app/ app/
 
 # ── Copy project-level files needed at runtime ────────────────────────────────
 # requirements.txt is already there; these are the other root-level files
@@ -60,11 +63,15 @@ COPY .env_example .
 # models/ must exist so detector_service.py path check doesn't crash.
 RUN mkdir -p logs images data models
 
-# ── PYTHONPATH ────────────────────────────────────────────────────────────────
-# WORKDIR is /app and all source files are directly in /app,
-# so flat imports (from config import ...) resolve without any extra path.
-ENV PYTHONPATH=/app
-ENV PROJECT_ROOT=/app
+# ── Python path ───────────────────────────────────────────────────────────────
+# Adds app/ to the module search path so flat imports resolve correctly:
+#   from config import ... → /Networks-IOT-Assignment/app/config.py
+ENV PYTHONPATH=/Networks-IOT-Assignment/app
+
+# ── PROJECT_ROOT matches WORKDIR ──────────────────────────────────────────────
+# config.py uses this to locate data/, logs/, images/, models/
+# which all sit directly under the project root.
+ENV PROJECT_ROOT=/Networks-IOT-Assignment
 
 # ── Default command ───────────────────────────────────────────────────────────
-CMD ["python", "main.py"]
+CMD ["gunicorn", "--workers", "1", "--threads", "4", "--worker-class", "gthread", "--bind", "0.0.0.0:5000", "dashboard:app"]

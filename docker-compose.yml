@@ -1,35 +1,23 @@
 # =============================================================================
-#  Flask web dashboard. 
-#     Reads from MongoDB Atlas when configured,
-#     or from shared SQLite database when running locally.
-#     No hardware access needed.
-#     Accessible at http://YOUR_PI_IP:5000
-#     Can also be deployed to Render (gunicorn app.dashboard:app).
+# Docker Compose — dashboard service only.
 #
-# IMPORTANT — DB_PATH in .env:
-#   Set DB_PATH=/app/data/detections.db when using Docker.
-#   The ./data directory mount is used instead of a direct file mount
-#   because Docker creates a directory (not a file) if the path doesn't
-#   exist, which breaks SQLite.
+# The smart-detector runs natively on the Pi (libcamera cannot run in Docker).
+# Start it separately:
+#   cd ~/Networks-IOT-Assignment
+#   source .venv/bin/activate
+#   PYTHONPATH=app python3 app/main.py
 #
-# Pi Camera / SenseHAT:
-#   privileged: true and /dev mount are required for libcamera (CSI camera)
-#   and SenseHAT GPIO access inside the container.
+# The dashboard reads detections from MongoDB Atlas (when MONGO_URI is set)
+# or from the shared SQLite file via the ./data volume mount.
 #
-# MongoDB Atlas:
-#   Both services read MONGO_URI from .env automatically via env_file.
-#   The smart-detector uses it for the dual-write mirror.
-#   The dashboard uses it to serve the Render-accessible API endpoints.
-#   No extra Docker networking is needed -- Atlas is an external service.
+# DB_PATH does not need to be set manually — config.py derives it from
+# PROJECT_ROOT=/Networks-IOT-Assignment which is set in the Dockerfile.
 # =============================================================================
 services:
 
   # ── Flask Dashboard ─────────────────────────────────────────────────────────
   # The smart-detector service is intentionally absent.
   # libcamera is a Pi kernel driver that cannot run inside a Docker container.
-  # Run the detection loop natively instead:
-  #   PYTHONPATH=app python3 app/main.py
-  # The dashboard reads from the SQLite database and images that main.py writes.
 
   dashboard:
     build: .
@@ -42,9 +30,9 @@ services:
       - "5000:5000"
 
     volumes:
-      - ./data:/app/data       # reads detections.db written by native detector loop
-      - ./images:/app/images   # reads annotated images saved by native detector loop
-      - ./logs:/app/logs       # shared log directory
+      - ./data:/Networks-IOT-Assignment/data     # reads detections.db written by native detector loop
+      - ./images:/Networks-IOT-Assignment/images # reads annotated images saved by native detector loop
+      - ./logs:/Networks-IOT-Assignment/logs     # shared log directory
 
     command: [
       "gunicorn",
@@ -53,4 +41,4 @@ services:
       "--worker-class", "gthread",
       "--bind", "0.0.0.0:5000",
       "dashboard:app"
-    ]
+    ]    

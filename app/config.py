@@ -171,7 +171,12 @@ FLASK_HOST  = os.getenv("FLASK_HOST",  "0.0.0.0")
 FLASK_PORT  = int(os.getenv("FLASK_PORT", "5000"))
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
-# ── File paths and directories ───────────────────────────────────────────────
+# ── File paths and directories ────────────────────────────────────────────────
+# PROJECT_ROOT is set to /Networks-IOT-Assignment in the Dockerfile.
+# Native: resolved by going two dirname levels up from app/config.py,
+#         landing at Networks-IOT-Assignment/ on the Pi filesystem.
+# Docker: set explicitly via ENV PROJECT_ROOT=/Networks-IOT-Assignment.
+# Both environments resolve data/, logs/, images/, and models/ identically.
 BASE_DIR = os.getenv(
     "PROJECT_ROOT",
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -182,6 +187,9 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 IMAGE_DIR = os.path.join(BASE_DIR, "images")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
+# data/, logs/, and images/ are created automatically on first run.
+# models/ is intentionally not created here — yolov8n.onnx must be
+# copied manually into models/ before starting the detector.
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(IMAGE_DIR, exist_ok=True)
