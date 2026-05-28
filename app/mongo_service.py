@@ -1,6 +1,4 @@
 """
-mongo_service.py
-================
 Purpose:
     Mirrors every detection event to MongoDB Atlas in real time, providing
     cloud-based remote persistence alongside the local SQLite database.
