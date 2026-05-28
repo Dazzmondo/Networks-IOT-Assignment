@@ -18,7 +18,7 @@ A modular, event-driven IoT computer vision system running on a Raspberry Pi tha
 | Sense HAT | Environmental sensing (temperature, humidity, pressure) and LED feedback |
 | Flask | Web server and dashboard backend |
 | Jinja2 | HTML template rendering for Flask dashboard pages |
-| Gunicorn | Production WSGI server originally designed for Render deployment (later abandoned) |
+| Gunicorn | Production WSGI server for the Flask dashboard container |
 | Chart.js | Real-time analytics and dashboard visualisation |
 | chartjs-adapter-date-fns | Time-based formatting support for Chart.js time-series graphs |
 | Server-Sent Events (SSE) | Live event streaming from Flask server to browser dashboard |
@@ -164,7 +164,7 @@ MongoDB Atlas (Cloud Mirror)
 
 ## Demo
 
-[![Watch the video](https://www.youtube.com/watch?v=AvDrT0WeD7k)](https://www.youtube.com/watch?v=AvDrT0WeD7k)
+[![Watch the demo](https://img.youtube.com/vi/AvDrT0WeD7k/0.jpg)](https://www.youtube.com/watch?v=AvDrT0WeD7k)
 
 NOTE: RENDER IS NO LONGER BEING USED IN THIS ASSIGNMENT
 
@@ -173,7 +173,7 @@ NOTE: RENDER IS NO LONGER BEING USED IN THIS ASSIGNMENT
 ## Project Structure
 
 ```
-smart-iot-detector/
+Networks-IOT-Assignment/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -182,7 +182,7 @@ smart-iot-detector/
 │
 ├── app/
 │   ├── main.py               ← detection loop entry point
-│   ├── dashboard.py          ← Flask web dashboard (deployable to Render)
+│   ├── dashboard.py          ← Flask web dashboard
 │   ├── config.py             ← centralised config (loads .env)
 │   ├── events.py             ← named event constants
 │   ├── camera_service.py     ← Picamera2 image capture
@@ -193,7 +193,7 @@ smart-iot-detector/
 │   ├── mqtt_service.py       ← HiveMQ MQTT publishing (paho loop_start)
 │   ├── db_service.py         ← SQLite detection log
 │   ├── mongo_service.py      ← MongoDB service for cloud storage/logging
-│   ├── analytics.py          ← data aggregation and trends processor
+│   ├── analytics_service.py  ← data aggregation and trends processor
 │   ├── led_service.py        ← SenseHAT LED matrix feedback
 │   ├── env_data_service.py   ← SenseHAT environmental sensor readings
 │   ├── cloudinary_service.py ← Cloudinary image upload
@@ -206,7 +206,8 @@ smart-iot-detector/
 │
 ├── images/                   ← detection images (git-ignored)
 ├── logs/                     ← events.log (git-ignored)
-└── detections.db             ← SQLite database (git-ignored)
+├── data/
+|   └── detections.db         ← SQLite database (git-ignored)
 ```
 ---
 
@@ -245,7 +246,7 @@ The SenseHAT is physically attached to the Raspberry Pi used in this project, ma
 SQLite requires zero configuration, produces a single portable file, and persists across restarts when volume-mounted in Docker. It is sufficient for the event volume a home IoT system generates. WAL (Write-Ahead Logging) mode is enabled via `PRAGMA journal_mode=WAL` so the Flask dashboard can read from the database at the same time as the detection loop writes to it, without locking conflicts. This is important because the dashboard and main detection loop run as separate processes that both access the same file.
 
 ### Why MongoDB Atlas alongside SQLite?
-SQLite lives on the Pi's SD card and is not accessible remotely. MongoDB Atlas provides a free-tier cloud database that the Render-deployed dashboard can query directly. The dual-write pattern — SQLite first, then MongoDB as a mirror — means the Pi retains full offline resilience (SQLite always written first, MongoDB failure does not affect the pipeline) while also maintaining remote persistence. MongoDB's aggregation pipeline (`$dateTrunc`, `$group`, `$avg`) enables server-side analytics computation — rolling averages and hourly bucketing are computed in the database rather than by pulling raw rows into Python.
+SQLite lives on the Pi's SD card and is not accessible remotely. MongoDB Atlas provides a free-tier cloud database that the dashboard can query directly — useful when the dashboard runs in Docker and cannot access the SQLite file on the Pi filesystem. The dual-write pattern — SQLite first, then MongoDB as a mirror — means the Pi retains full offline resilience (SQLite always written first, MongoDB failure does not affect the pipeline) while also maintaining remote persistence. MongoDB's aggregation pipeline (`$dateTrunc`, `$group`, `$avg`) enables server-side analytics computation — rolling averages and hourly bucketing are computed in the database rather than by pulling raw rows into Python.
 
 ### Why Flask + Server-Sent Events over WebSockets page refresh?
 The module labs build Flask APIs on the Pi and deploy them to Render, so Flask is a natural fit. Server-Sent Events (SSE) replace the original `<meta http-equiv="refresh" content="10">` pattern. SSE holds a single persistent HTTP connection per browser tab and the server pushes named events (`detection`, `environment`, `analytics`, `counts`, `timeseries`) whenever new data is available. This means the dashboard updates in under 2 seconds after a detection without reloading the page. This is a better user experience and avoids the visual flicker of a full reload. SSE was chosen over WebSockets because it is simpler (one-way server-to-client push is all that is needed) and works natively with Flask's streaming response support.
@@ -315,8 +316,7 @@ This guide walks you through setting up the external accounts, hardware configur
 8. [Part 8: Blynk Mobile App Configuration (Android)](#part-8--blynk-mobile-app-configuration-android)
 9. [Part 9: GitHub Repository Tracking](#part-9--github-repository-tracking)
 10. [Part 10: Run with Docker](#part-10--run-with-docker)
-11. [Part 11: Deploy Dashboard to Render](#part-11--deploy-dashboard-to-render)
-12. [Part 12: Troubleshooting](#part-12--troubleshooting)
+11. [Part 11: Troubleshooting](#part-11--troubleshooting)
 
 ---
 
@@ -572,7 +572,7 @@ cd Networks-IOT-Assignment
 ## 4.2 Create Directories
 
 ```bash
-mkdir -p app/templates models images logs
+mkdir -p models images logs data
 ```
 
 ---
@@ -722,14 +722,14 @@ print(sense.get_pressure())
 ## 5.3 Test Environmental Data Service
 
 ```bash
-PYTHONPATH=. python app/env_data_service.py
+PYTHONPATH=app python app/env_data_service.py
 ```
 
 ## 5.4 Test YOLO Detection
 
 ```bash
-PYTHONPATH=. python -c "
-from app.detector_service import DetectorService
+PYTHONPATH=app python -c "
+from detector_service import DetectorService
 d = DetectorService()
 print(d.detect('test_capture.jpg'))
 "
@@ -754,7 +754,7 @@ mosquitto_pub -h broker.hivemq.com \
 ## 5.6 Test Blynk
 
 ```bash
-PYTHONPATH=. python -c "
+PYTHONPATH=app python -c "
 from dotenv import load_dotenv
 load_dotenv()
 import os, BlynkLib, time
@@ -769,10 +769,10 @@ blynk.virtual_write(0, 'TEST OK')
 ## 5.7 Test Cloudinary
 
 ```bash
-PYTHONPATH=. python -c "
+PYTHONPATH=app python -c "
 from dotenv import load_dotenv
 load_dotenv()
-from app.cloudinary_service import CloudinaryService
+from cloudinary_service import CloudinaryService
 cloud = CloudinaryService()
 print(cloud.upload('test_capture.jpg'))
 "
@@ -781,10 +781,10 @@ print(cloud.upload('test_capture.jpg'))
 ## 5.8 Test MongoDB Atlas
 
 ```bash
-PYTHONPATH=. python -c "
+PYTHONPATH=app python -c "
 from dotenv import load_dotenv
 load_dotenv()
-from app.mongo_service import MongoService
+from mongo_service import MongoService
 mongo = MongoService()
 print(mongo.is_enabled())
 "
@@ -793,7 +793,7 @@ print(mongo.is_enabled())
 ## 5.9 Test Flask Dashboard
 
 ```bash
-PYTHONPATH=. python app/dashboard.py
+PYTHONPATH=app python app/dashboard.py
 ```
 
 Open:
@@ -809,7 +809,7 @@ http://YOUR_PI_IP:5000
 ## 6.1 Start Detection Loop
 
 ```bash
-PYTHONPATH=. python app/main.py
+PYTHONPATH=app python app/main.py
 ```
 
 Expected:
@@ -832,7 +832,7 @@ SenseHAT LEDs:
 ## 6.2 Start Dashboard
 
 ```bash
-PYTHONPATH=. python app/dashboard.py
+PYTHONPATH=app python app/dashboard.py
 ```
 
 Open:
@@ -992,7 +992,7 @@ docker compose up -d --remove-orphans
 #### 2. Launch the Hardware Detection Loop (Natively on your Pi)
 Open a brand-new, separate terminal window, navigate to your root project workspace folder, and trigger the physical core pipeline with the terminal environment path mapper active:
 ```bash
-PYTHONPATH=app python3 -m app.main
+PYTHONPATH=app python app/main.py
 ```
 
 ---
@@ -1163,7 +1163,7 @@ Note: These do not represent the full testing logs, but they represent the most 
 ## Sample Images
 
 
-| Dog Detection 1 | Dog Detection 2 | Dog Detecton 3 |
+| Dog Detection 1 | Dog Detection 2 | Dog Detection 3 |
 |:---:|:---:|:---:|
 | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724847/iot-detector/longaimsmqyqxwoflq4j.jpg" width="300" alt="Dog detection 1"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779724857/iot-detector/xmcuaz3biamdvn7xsgql.jpg" width="300" alt="Dog detection 2"> | <img src="https://res.cloudinary.com/di5ce2hyw/image/upload/v1779816825/iot-detector/rvymwz53t80xfuh72sfw.jpg" width="300" alt="Dog detection 3"> |
 
