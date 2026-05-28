@@ -1250,7 +1250,6 @@ Note: These do not represent the full testing logs, but they represent the most 
 
 Large Language Models (LLMs) were utilized during the development of this project. The majority of the code was first written personally based on the Computer Systems & Networks module lectures and labs, in addition to the knowledge from other modules (Programming, Web Development, Databases), before being tweaked.
 
-The `analytics_service.py` file was largely generated with Claude to help integrating both MongoDB Atlas and the SQLite local database with the Flask web dashboard. New topics like TimeSeries, Z-scores, anomaly scoring, rolling averages, and Server-Sent Events for the real-time monitoring of the web dashboard are mainly focused in that file, though other files also have sections relating to these concepts, such as `dashboard.html`. Resources relating to these topics have been included in the resources section.
 
 ### Tools Used
 * **Claude** (Anthropic)
