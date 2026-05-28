@@ -299,6 +299,8 @@ DB_PATH = os.path.join(DATA_DIR, "detections.db")
 IMAGE_SAVE_DIR = IMAGE_DIR
 
 # YOLO ONNX model file path. Must be present for detection to work.
+# This executes during import, so if the file is missing, 
+# the application will fail to start with a clear error message.
 YOLO_MODEL_PATH = os.path.join(MODEL_DIR, "yolov8n.onnx")
 if not os.path.exists(YOLO_MODEL_PATH):
     raise FileNotFoundError("YOLO model file not found. Please ensure 'yolov8n.onnx' is present in the models directory.")

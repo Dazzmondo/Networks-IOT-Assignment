@@ -92,6 +92,8 @@ mongo = MongoService()
 # When MongoDB is enabled, the dashboard reads analytics and recent
 # detections from Atlas rather than SQLite — useful when the container
 # cannot directly access the SQLite file written by the native detector.
+# AnalyticsService also receives the mongo instance so it can read from
+# Atlas when enabled, or fall back to SQLite when MongoDB is not configured.
 db        = DBService(mongo_service=mongo)
 env       = EnvDataService()
 analytics = AnalyticsService(db_service=db, mongo_service=mongo)
